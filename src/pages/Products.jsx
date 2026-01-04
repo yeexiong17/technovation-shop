@@ -178,7 +178,7 @@ export default function Products() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px">
             {filteredProducts.map((product) => (
               <div key={product.id} className="bg-background p-6">
                 <ProductCard product={product} />

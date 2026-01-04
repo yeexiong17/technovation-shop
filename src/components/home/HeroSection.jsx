@@ -9,7 +9,7 @@ export function HeroSection() {
         {/* Top bar */}
         <div className="flex items-center justify-between border-b border-rule pb-4 mb-12 animate-reveal">
           <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            Est. 2024
+            Est. 2026
           </span>
           <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             Technology & Innovation
@@ -25,7 +25,7 @@ export function HeroSection() {
               <span className="italic font-normal">is now</span>
             </h1>
           </div>
-          
+
           <div className="lg:col-span-4 flex flex-col justify-end animate-reveal-delay-1">
             <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-md">
               Curated technology for those who appreciate craft, precision, and timeless design.
