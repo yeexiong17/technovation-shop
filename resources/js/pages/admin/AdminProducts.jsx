@@ -11,15 +11,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { products } from "@/data/products";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { router } from "@inertiajs/react";
 
-export default function AdminProducts() {
+export default function AdminProducts({ products: initialProducts = [], categories: initialCategories = [] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [productList, setProductList] = useState(products);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
@@ -28,11 +29,13 @@ export default function AdminProducts() {
     price: "",
     originalPrice: "",
     image: "",
-    category: "laptops",
+    category: initialCategories.length > 0 ? initialCategories[0].slug : "",
     inStock: true,
     featured: false,
     badge: "",
   });
+  
+  const productList = initialProducts;
 
   const filteredProducts = productList.filter((product) => {
     const matchesSearch =
@@ -43,8 +46,8 @@ export default function AdminProducts() {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ["all", "laptops", "smartphones", "audio", "gaming", "accessories", "wearables"];
-  const productCategories = ["laptops", "smartphones", "audio", "gaming", "accessories", "wearables"];
+  const categories = ["all", ...initialCategories.map(cat => cat.slug)];
+  const productCategories = initialCategories;
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -98,51 +101,108 @@ export default function AdminProducts() {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Validation
-    if (!formData.name || !formData.description || !formData.price || !imageFile) {
-      toast.error("Please fill in all required fields and upload an image");
-      return;
-    }
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setFormData({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      originalPrice: product.originalPrice ? product.originalPrice.toString() : "",
+      image: product.image || "",
+      category: product.category,
+      inStock: product.inStock,
+      featured: product.featured,
+      badge: product.badge || "",
+    });
+    setImagePreview(product.image || null);
+    setImageFile(null); // Reset file input for edit
+    setIsDialogOpen(true);
+  };
 
-    // Create new product
-    const newProduct = {
-      id: String(productList.length + 1),
-      name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
-      image: formData.image,
-      category: formData.category,
-      inStock: formData.inStock,
-      featured: formData.featured,
-      rating: 0, // Default rating
-      reviews: 0, // Default review count
-      badge: formData.badge || undefined,
-    };
-
-    // Add to product list
-    setProductList([...productList, newProduct]);
-    
-    // Reset form
+  const handleCancel = () => {
+    setEditingProduct(null);
     setFormData({
       name: "",
       description: "",
       price: "",
       originalPrice: "",
       image: "",
-      category: "laptops",
+      category: initialCategories.length > 0 ? initialCategories[0].slug : "",
       inStock: true,
       featured: false,
       badge: "",
     });
     setImageFile(null);
     setImagePreview(null);
-    
     setIsDialogOpen(false);
-    toast.success("Product added successfully!");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!formData.name || !formData.description || !formData.price) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // For new products, image is required. For editing, it's optional (can keep existing)
+    if (!editingProduct && !imageFile) {
+      toast.error("Please upload an image");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Create FormData for file upload
+    const submitData = new FormData();
+    submitData.append('name', formData.name);
+    submitData.append('description', formData.description);
+    submitData.append('price', formData.price);
+    if (formData.originalPrice) {
+      submitData.append('originalPrice', formData.originalPrice);
+    }
+    submitData.append('category', formData.category);
+    submitData.append('inStock', formData.inStock ? '1' : '0');
+    submitData.append('featured', formData.featured ? '1' : '0');
+    if (formData.badge) {
+      submitData.append('badge', formData.badge);
+    }
+    // Only append image if a new file was selected
+    if (imageFile) {
+      submitData.append('image', imageFile);
+    }
+
+    // Submit to backend
+    const url = editingProduct 
+      ? `/admin/products/${editingProduct.id}`
+      : '/admin/products';
+    const method = editingProduct ? 'put' : 'post';
+
+    router[method](url, submitData, {
+      forceFormData: true,
+      onSuccess: () => {
+        toast.success(editingProduct ? "Product updated successfully!" : "Product added successfully!");
+        handleCancel();
+        setIsSubmitting(false);
+      },
+      onError: (errors) => {
+        setIsSubmitting(false);
+        if (errors.image) {
+          toast.error(errors.image);
+        } else if (errors.name) {
+          toast.error(errors.name);
+        } else if (errors.description) {
+          toast.error(errors.description);
+        } else if (errors.price) {
+          toast.error(errors.price);
+        } else if (errors.category) {
+          toast.error(errors.category);
+        } else {
+          toast.error(editingProduct ? "Failed to update product. Please try again." : "Failed to add product. Please try again.");
+        }
+      },
+    });
   };
 
   return (
@@ -160,38 +220,41 @@ export default function AdminProducts() {
           onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
-              // Reset form when dialog closes
-              setFormData({
-                name: "",
-                description: "",
-                price: "",
-                originalPrice: "",
-                image: "",
-                category: "laptops",
-                inStock: true,
-                featured: false,
-                badge: "",
-              });
-              setImageFile(null);
-              setImagePreview(null);
-              const fileInput = document.getElementById("product-image");
-              if (fileInput) {
-                fileInput.value = "";
-              }
+              handleCancel();
             }
           }}
         >
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button 
+              className="gap-2"
+              onClick={() => {
+                setEditingProduct(null);
+                setFormData({
+                  name: "",
+                  description: "",
+                  price: "",
+                  originalPrice: "",
+                  image: "",
+                  category: initialCategories.length > 0 ? initialCategories[0].slug : "",
+                  inStock: true,
+                  featured: false,
+                  badge: "",
+                });
+                setImageFile(null);
+                setImagePreview(null);
+              }}
+            >
               <Plus className="w-4 h-4" />
               Add Product
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
             <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
+              <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
               <DialogDescription>
-                Fill in the details to add a new product to your catalog.
+                {editingProduct 
+                  ? 'Update the product details below.'
+                  : 'Fill in the details to add a new product to your catalog.'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -217,8 +280,8 @@ export default function AdminProducts() {
                     required
                   >
                     {productCategories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      <option key={cat.slug} value={cat.slug}>
+                        {cat.name}
                       </option>
                     ))}
                   </select>
@@ -267,7 +330,9 @@ export default function AdminProducts() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Product Image *</label>
+                <label className="text-sm font-medium">
+                  Product Image {!editingProduct && '*'}
+                </label>
                 {!imagePreview ? (
                   <div className="border-2 border-dashed border-border rounded-lg p-6">
                     <label
@@ -286,7 +351,7 @@ export default function AdminProducts() {
                       accept="image/*"
                       onChange={handleImageChange}
                       className="hidden"
-                      required
+                      required={!editingProduct}
                     />
                   </div>
                 ) : (
@@ -306,7 +371,7 @@ export default function AdminProducts() {
                       </button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {imageFile?.name}
+                      {imageFile?.name || (editingProduct ? 'Current image (click to change)' : '')}
                     </p>
                   </div>
                 )}
@@ -350,11 +415,16 @@ export default function AdminProducts() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Add Product</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting 
+                    ? (editingProduct ? "Updating..." : "Adding...") 
+                    : (editingProduct ? "Update Product" : "Add Product")}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -420,9 +490,12 @@ export default function AdminProducts() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={product.image}
+                        src={product.image || '/placeholder-image.png'}
                         alt={product.name}
                         className="w-12 h-12 rounded-lg object-cover"
+                        onError={(e) => {
+                          e.target.src = '/placeholder-image.png';
+                        }}
                       />
                       <div>
                         <p className="font-medium">{product.name}</p>
@@ -433,7 +506,7 @@ export default function AdminProducts() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm capitalize">{product.category}</span>
+                    <span className="text-sm capitalize">{product.categoryName || product.category}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="font-medium">${product.price.toFixed(2)}</span>
@@ -465,7 +538,12 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8"
+                        onClick={() => handleEdit(product)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button

@@ -1,4 +1,4 @@
-import { Link, usePage } from "@inertiajs/react";
+import { Link, usePage, router } from "@inertiajs/react";
 import {
   LayoutDashboard,
   Package,
@@ -9,6 +9,7 @@ import {
   Bell,
   Search,
   Zap,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,10 +25,29 @@ const sidebarLinks = [
 ];
 
 export function AdminLayout({ children }) {
-  const { url } = usePage();
+  const page = usePage();
+  const url = page?.url || '';
+  const auth = page?.props?.auth;
+  const user = auth?.user;
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    router.post("/logout", {}, {
+      onSuccess: () => {
+        router.visit("/auth");
+      },
+    });
+  };
 
   // Check if current path matches any sidebar link (including sub-paths)
   const getCurrentPageTitle = () => {
+    if (!url) return "Admin";
+    
+    // Check if we're on an order detail page
+    if (url.match(/^\/admin\/orders\/\d+$/)) {
+      return "Order Details";
+    }
+    
     const matchedLink = sidebarLinks.find((link) => {
       if (link.href === "/admin") {
         return url === "/admin" || url === "/admin/";
@@ -54,10 +74,11 @@ export function AdminLayout({ children }) {
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {sidebarLinks.map((link) => {
-            const isActive =
-              link.href === "/admin"
+            const isActive = url
+              ? link.href === "/admin"
                 ? url === "/admin" || url === "/admin/"
-                : url.startsWith(link.href);
+                : url.startsWith(link.href)
+              : false;
             return (
               <Link
                 key={link.label}
@@ -77,18 +98,26 @@ export function AdminLayout({ children }) {
         </nav>
 
         {/* User */}
-        <div className="p-4 border-t border-border flex-shrink-0">
+        <div className="p-4 border-t border-border flex-shrink-0 space-y-2">
           <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary">
             <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold">
-              A
+              {user?.name?.charAt(0)?.toUpperCase() || 'A'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">Admin User</p>
+              <p className="text-sm font-medium truncate">{user?.name || 'Admin User'}</p>
               <p className="text-xs text-muted-foreground truncate">
-                admin@technovation.com
+                {user?.email || 'admin@technovation.com'}
               </p>
             </div>
           </div>
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="w-full justify-start gap-2 text-red-500 hover:text-red-600 hover:bg-red-500/10 border-red-500/20"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
         </div>
       </aside>
 

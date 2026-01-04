@@ -1,10 +1,13 @@
 import { ArrowRight } from "lucide-react";
 import { ProductCard } from "@/components/products/ProductCard";
-import { products } from "@/data/products";
 import { Link } from "@inertiajs/react";
 
-export function FeaturedProducts() {
+export function FeaturedProducts({ products = [] }) {
   const featuredProducts = products.filter((p) => p.featured).slice(0, 4);
+
+  if (featuredProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-24 border-t border-rule">
@@ -49,4 +52,3 @@ export function FeaturedProducts() {
     </section>
   );
 }
-

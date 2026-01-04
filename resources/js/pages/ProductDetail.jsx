@@ -1,82 +1,15 @@
 import { Link, usePage } from "@inertiajs/react";
 import { ArrowLeft, Star, Minus, Plus, ShoppingBag, MessageSquare, User, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { products } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { ProductCard } from "@/components/products/ProductCard";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Layout from "@/Layout";
 
-// Sample reviews data - in a real app, this would come from an API
-const sampleReviews = {
-  "1": [
-    {
-      id: "rev-1",
-      userName: "Alex Johnson",
-      rating: 5,
-      date: "2024-01-10",
-      comment: "Absolutely love this laptop! The performance is outstanding and the build quality is excellent. Highly recommend!",
-      verified: true,
-    },
-    {
-      id: "rev-2",
-      userName: "Sarah Chen",
-      rating: 5,
-      date: "2024-01-08",
-      comment: "Best laptop I've ever owned. The M3 Pro chip is incredibly fast, and the display is gorgeous.",
-      verified: true,
-    },
-    {
-      id: "rev-3",
-      userName: "Michael Brown",
-      rating: 4,
-      date: "2024-01-05",
-      comment: "Great laptop overall. Battery life could be better, but performance is top-notch.",
-      verified: false,
-    },
-    {
-      id: "rev-4",
-      userName: "Emily Davis",
-      rating: 5,
-      date: "2024-01-03",
-      comment: "Perfect for my work. Fast, reliable, and beautiful design. Worth every penny!",
-      verified: true,
-    },
-  ],
-  "2": [
-    {
-      id: "rev-5",
-      userName: "David Wilson",
-      rating: 5,
-      date: "2024-01-12",
-      comment: "Amazing phone! The camera quality is incredible and the battery lasts all day.",
-      verified: true,
-    },
-    {
-      id: "rev-6",
-      userName: "Lisa Anderson",
-      rating: 4,
-      date: "2024-01-09",
-      comment: "Really good phone, but the price is a bit high. Still, very satisfied with the purchase.",
-      verified: true,
-    },
-  ],
-  "3": [
-    {
-      id: "rev-7",
-      userName: "James Taylor",
-      rating: 5,
-      date: "2024-01-11",
-      comment: "Best headphones I've ever used! The noise cancellation is incredible.",
-      verified: true,
-    },
-  ],
-};
-
-const ProductDetailContent = ({ id, product }) => {
+const ProductDetailContent = ({ product, relatedProducts = [] }) => {
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [userRating, setUserRating] = useState(0);
@@ -84,11 +17,43 @@ const ProductDetailContent = ({ id, product }) => {
   const [reviewText, setReviewText] = useState("");
   const [userName, setUserName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [reviews, setReviews] = useState(sampleReviews[id] || []);
+  // Ensure reviews is always an array
+  const formatReviews = (reviewsData) => {
+    if (!reviewsData) {
+      return [];
+    }
 
-  const relatedProducts = products
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
+    // If it's already an array, return it as is (backend already formats it correctly)
+    if (Array.isArray(reviewsData)) {
+      return reviewsData.filter(review =>
+        review &&
+        typeof review === 'object' &&
+        !Array.isArray(review) &&
+        review.id !== undefined
+      );
+    }
+
+    // If it's not an array, try to convert it
+    if (reviewsData && typeof reviewsData[Symbol.iterator] === 'function') {
+      return Array.from(reviewsData).filter(review =>
+        review &&
+        typeof review === 'object' &&
+        !Array.isArray(review) &&
+        review.id !== undefined
+      );
+    }
+
+    return [];
+  };
+
+  const [reviews, setReviews] = useState(formatReviews(product?.reviews));
+
+  // Update reviews when product changes
+  useEffect(() => {
+    if (product?.reviews) {
+      setReviews(formatReviews(product.reviews));
+    }
+  }, [product]);
 
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
@@ -97,15 +62,22 @@ const ProductDetailContent = ({ id, product }) => {
   };
 
   // Calculate rating statistics
-  const ratingStats = reviews.reduce((acc, review) => {
-    acc[review.rating] = (acc[review.rating] || 0) + 1;
+  const ratingStats = (reviews || []).reduce((acc, review) => {
+    if (review && typeof review === 'object' && 'rating' in review) {
+      acc[review.rating] = (acc[review.rating] || 0) + 1;
+    }
     return acc;
   }, {});
 
-  const totalReviews = reviews.length;
+  const totalReviews = (reviews || []).length;
   const averageRating = totalReviews > 0
-    ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
-    : product.rating;
+    ? (reviews || []).reduce((sum, review) => {
+      if (review && typeof review === 'object' && 'rating' in review) {
+        return sum + (review.rating || 0);
+      }
+      return sum;
+    }, 0) / totalReviews
+    : (product?.rating || 0);
 
   const handleSubmitReview = () => {
     if (userRating === 0) {
@@ -191,7 +163,7 @@ const ProductDetailContent = ({ id, product }) => {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`w-4 h-4 ${i < Math.floor(product.rating)
+                    className={`w-4 h-4 ${i < Math.floor(product.rating || 0)
                       ? "fill-primary text-primary"
                       : "text-muted-foreground/30"
                       }`}
@@ -199,21 +171,21 @@ const ProductDetailContent = ({ id, product }) => {
                 ))}
               </div>
               <span className="font-mono text-xs text-muted-foreground">
-                ({product.reviews} reviews)
+                ({product.reviews.length || product.reviews_count || 0} reviews)
               </span>
             </div>
 
             {/* Price */}
             <div className="flex items-baseline gap-3 mb-8">
-              <span className="font-serif text-3xl">${product.price.toFixed(2)}</span>
-              {product.originalPrice && (
+              <span className="font-serif text-3xl">${(product.price || 0).toFixed(2)}</span>
+              {(product.originalPrice || product.original_price) && (
                 <span className="text-lg text-muted-foreground line-through">
-                  ${product.originalPrice.toFixed(2)}
+                  ${((product.originalPrice || product.original_price) || 0).toFixed(2)}
                 </span>
               )}
-              {product.originalPrice && (
+              {(product.originalPrice || product.original_price) && (
                 <span className="font-mono text-xs bg-primary text-primary-foreground px-2 py-1">
-                  SAVE {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+                  SAVE {Math.round((((product.originalPrice || product.original_price) - product.price) / (product.originalPrice || product.original_price)) * 100)}%
                 </span>
               )}
             </div>
@@ -411,7 +383,7 @@ const ProductDetailContent = ({ id, product }) => {
             </div>
 
             {/* Reviews List */}
-            {reviews.length > 0 ? (
+            {reviews && Array.isArray(reviews) && reviews.length > 0 ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="font-display text-2xl">
@@ -420,7 +392,7 @@ const ProductDetailContent = ({ id, product }) => {
                 </div>
 
                 <div className="space-y-6">
-                  {reviews.map((review) => (
+                  {reviews.filter(review => review && typeof review === 'object').map((review) => (
                     <div
                       key={review.id}
                       className="border border-border rounded-lg p-6"
@@ -441,7 +413,7 @@ const ProductDetailContent = ({ id, product }) => {
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              {formatDate(review.date)}
+                              {review.date ? formatDate(review.date) : 'N/A'}
                             </p>
                           </div>
                         </div>
@@ -469,7 +441,7 @@ const ProductDetailContent = ({ id, product }) => {
             ) : (
               <div className="text-center py-12 border border-border rounded-lg">
                 <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <p className="font-display text-xl mb-2">No reviews yet</p>
+                <p p className="font-display text-xl mb-2" > No reviews yet</p>
                 <p className="text-muted-foreground">
                   Be the first to review this product!
                 </p>
@@ -478,7 +450,7 @@ const ProductDetailContent = ({ id, product }) => {
           </div>
         </section>
 
-        {/* Related Products */}
+        Related Products
         {relatedProducts.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-8">
@@ -502,9 +474,7 @@ const ProductDetailContent = ({ id, product }) => {
   );
 };
 
-const ProductDetail = ({ id }) => {
-  const product = products.find((p) => p.id === id);
-
+const ProductDetail = ({ product, relatedProducts = [] }) => {
   if (!product) {
     return (
       <Layout>
@@ -522,7 +492,7 @@ const ProductDetail = ({ id }) => {
 
   return (
     <Layout>
-      <ProductDetailContent id={id} product={product} />
+      <ProductDetailContent product={product} relatedProducts={relatedProducts} />
     </Layout>
   );
 };

@@ -5,13 +5,13 @@ import { PromoSection } from "@/components/home/PromoSection";
 import { NewsletterSection } from "@/components/home/NewsletterSection";
 import Layout from "@/Layout";
 
-const Index = () => {
+const Index = ({ featuredProducts = [], categories = [] }) => {
   return (
     <Layout>
       <main>
         <HeroSection />
-        <FeaturedProducts />
-        <CategorySection />
+        <FeaturedProducts products={featuredProducts} />
+        <CategorySection categories={categories} />
         <PromoSection />
         <NewsletterSection />
       </main>
@@ -20,4 +20,3 @@ const Index = () => {
 };
 
 export default Index;
-

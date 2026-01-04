@@ -3,64 +3,21 @@ import { Search, Mail, Phone, Calendar, DollarSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { usePage } from "@inertiajs/react";
 
-const sampleCustomers = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    joinDate: "2023-06-15",
-    totalOrders: 12,
-    totalSpent: 8547.00,
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    phone: "+1 (555) 234-5678",
-    joinDate: "2023-08-20",
-    totalOrders: 8,
-    totalSpent: 5234.00,
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Bob Wilson",
-    email: "bob.wilson@example.com",
-    phone: "+1 (555) 345-6789",
-    joinDate: "2023-09-10",
-    totalOrders: 5,
-    totalSpent: 1899.00,
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "Alice Brown",
-    email: "alice.brown@example.com",
-    phone: "+1 (555) 456-7890",
-    joinDate: "2023-11-05",
-    totalOrders: 3,
-    totalSpent: 1347.00,
-    status: "active",
-  },
-  {
-    id: "5",
-    name: "Charlie Davis",
-    email: "charlie.davis@example.com",
-    phone: "+1 (555) 567-8901",
-    joinDate: "2024-01-02",
-    totalOrders: 1,
-    totalSpent: 799.00,
-    status: "active",
-  },
-];
-
-export default function AdminCustomers() {
+export default function AdminCustomers({ customers: initialCustomers, customerStats: initialStats }) {
+  const { props } = usePage();
+  const customers = initialCustomers || props.customers || [];
+  const stats = initialStats || props.customerStats || {
+    totalCustomers: 0,
+    activeCustomers: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+  };
+  
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredCustomers = sampleCustomers.filter(
+  const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -91,26 +48,27 @@ export default function AdminCustomers() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl bg-card border border-border">
           <p className="text-sm text-muted-foreground mb-1">Total Customers</p>
-          <p className="text-2xl font-bold">{sampleCustomers.length}</p>
+          <p className="text-2xl font-bold">{stats.totalCustomers || customers.length}</p>
         </div>
         <div className="p-4 rounded-xl bg-card border border-border">
           <p className="text-sm text-muted-foreground mb-1">Active Customers</p>
           <p className="text-2xl font-bold">
-            {sampleCustomers.filter((c) => c.status === "active").length}
+            {stats.activeCustomers || customers.filter((c) => c.status === "active").length}
           </p>
         </div>
         <div className="p-4 rounded-xl bg-card border border-border">
           <p className="text-sm text-muted-foreground mb-1">Total Orders</p>
           <p className="text-2xl font-bold">
-            {sampleCustomers.reduce((sum, c) => sum + c.totalOrders, 0)}
+            {stats.totalOrders || customers.reduce((sum, c) => sum + c.totalOrders, 0)}
           </p>
         </div>
         <div className="p-4 rounded-xl bg-card border border-border">
           <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
           <p className="text-2xl font-bold">
-            ${sampleCustomers
-              .reduce((sum, c) => sum + c.totalSpent, 0)
-              .toLocaleString()}
+            ${(stats.totalRevenue || customers.reduce((sum, c) => sum + c.totalSpent, 0)).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </p>
         </div>
       </div>
@@ -172,10 +130,12 @@ export default function AdminCustomers() {
                         <Mail className="w-3 h-3 text-muted-foreground" />
                         <span>{customer.email}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Phone className="w-3 h-3" />
-                        <span>{customer.phone}</span>
-                      </div>
+                      {customer.phone && customer.phone !== 'N/A' && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Phone className="w-3 h-3" />
+                          <span>{customer.phone}</span>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -224,7 +184,7 @@ export default function AdminCustomers() {
 
       {/* Summary */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <p>Showing {filteredCustomers.length} of {sampleCustomers.length} customers</p>
+        <p>Showing {filteredCustomers.length} of {customers.length} customers</p>
       </div>
     </div>
   );

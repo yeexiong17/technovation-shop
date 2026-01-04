@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Link, usePage } from "@inertiajs/react";
-import { ShoppingBag, Menu, X, User, Package, ChevronDown } from "lucide-react";
+import { Link, usePage, router } from "@inertiajs/react";
+import { ShoppingBag, Menu, X, User, Package, ChevronDown, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useCart } from "@/context/CartContext";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,17 @@ const navLinks = [
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { totalItems, setIsCartOpen } = useCart();
-  const { url } = usePage();
+  const { url, auth } = usePage().props;
+  const user = auth?.user;
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    router.post("/logout", {}, {
+      onSuccess: () => {
+        router.visit("/");
+      },
+    });
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -63,29 +74,53 @@ export function Navbar() {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <User className="w-4 h-4" />
-                  Account
-                  <ChevronDown className="w-3 h-3" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                     <User className="w-4 h-4" />
-                    Account
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/orders" className="flex items-center gap-2 cursor-pointer">
-                    <Package className="w-4 h-4" />
-                    My Orders
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    {user.name}
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {user?.is_admin && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="flex items-center gap-2 cursor-pointer">
+                        <LayoutDashboard className="w-4 h-4" />
+                        Admin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user?.is_admin && <DropdownMenuSeparator />}
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                      <User className="w-4 h-4" />
+                      Account
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders" className="flex items-center gap-2 cursor-pointer">
+                      <Package className="w-4 h-4" />
+                      My Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-red-500">
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                href="/auth"
+                className="hidden md:flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <User className="w-4 h-4" />
+                Sign In
+              </Link>
+            )}
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative flex items-center gap-2 text-sm"
@@ -119,20 +154,50 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/profile"
-                onClick={() => setIsMenuOpen(false)}
-                className="px-2 py-3 text-sm text-muted-foreground"
-              >
-                Account
-              </Link>
-              <Link
-                href="/orders"
-                onClick={() => setIsMenuOpen(false)}
-                className="px-2 py-3 text-sm text-muted-foreground"
-              >
-                My Orders
-              </Link>
+              {user ? (
+                <>
+                  {user.is_admin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="px-2 py-3 text-sm text-muted-foreground"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <Link
+                    href="/profile"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="px-2 py-3 text-sm text-muted-foreground"
+                  >
+                    Account
+                  </Link>
+                  <Link
+                    href="/orders"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="px-2 py-3 text-sm text-muted-foreground"
+                  >
+                    My Orders
+                  </Link>
+                  <button
+                    onClick={(e) => {
+                      setIsMenuOpen(false);
+                      handleLogout(e);
+                    }}
+                    className="px-2 py-3 text-sm text-red-500 text-left w-full"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/auth"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="px-2 py-3 text-sm text-muted-foreground"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </nav>
         )}

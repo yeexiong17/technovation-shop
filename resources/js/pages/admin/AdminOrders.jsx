@@ -1,56 +1,10 @@
 import { useState } from "react";
 import { Search, Filter, Eye, Package } from "lucide-react";
+import { Link } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-const sampleOrders = [
-  {
-    id: "ORD-001",
-    customer: "John Doe",
-    email: "john.doe@example.com",
-    date: "2024-01-15",
-    status: "delivered",
-    total: 1999.00,
-    items: 1,
-  },
-  {
-    id: "ORD-002",
-    customer: "Jane Smith",
-    email: "jane.smith@example.com",
-    date: "2024-01-10",
-    status: "shipped",
-    total: 1548.00,
-    items: 2,
-  },
-  {
-    id: "ORD-003",
-    customer: "Bob Wilson",
-    email: "bob.wilson@example.com",
-    date: "2024-01-05",
-    status: "processing",
-    total: 349.00,
-    items: 1,
-  },
-  {
-    id: "ORD-004",
-    customer: "Alice Brown",
-    email: "alice.brown@example.com",
-    date: "2023-12-20",
-    status: "delivered",
-    total: 449.00,
-    items: 1,
-  },
-  {
-    id: "ORD-005",
-    customer: "Charlie Davis",
-    email: "charlie.davis@example.com",
-    date: "2024-01-12",
-    status: "pending",
-    total: 799.00,
-    items: 3,
-  },
-];
+import { usePage } from "@inertiajs/react";
 
 const statusConfig = {
   delivered: { label: "Delivered", className: "bg-green-500/10 text-green-500" },
@@ -60,11 +14,14 @@ const statusConfig = {
   cancelled: { label: "Cancelled", className: "bg-red-500/10 text-red-500" },
 };
 
-export default function AdminOrders() {
+export default function AdminOrders({ orders: initialOrders }) {
+  const { props } = usePage();
+  const orders = initialOrders || props.orders || [];
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
-  const filteredOrders = sampleOrders.filter((order) => {
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -193,9 +150,13 @@ export default function AdminOrders() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        {order.orderId && (
+                          <Link href={`/admin/orders/${order.orderId}`}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="View Order Details">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -213,7 +174,7 @@ export default function AdminOrders() {
 
       {/* Summary */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <p>Showing {filteredOrders.length} of {sampleOrders.length} orders</p>
+        <p>Showing {filteredOrders.length} of {orders.length} orders</p>
       </div>
     </div>
   );

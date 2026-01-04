@@ -1,22 +1,130 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/Layout";
-import { Link } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import { ArrowLeft, CreditCard, Lock, Truck, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
+import { getCsrfToken } from "@/lib/csrf";
 
 function CheckoutContent() {
-  const { items, totalPrice } = useCart();
+  const { items, totalPrice, refreshCart } = useCart();
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [checkoutData, setCheckoutData] = useState(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    shipping_name: "",
+    shipping_address: "",
+    shipping_city: "",
+    shipping_state: "",
+    shipping_zip_code: "",
+    shipping_country: "",
+    shipping_phone: "",
+    cardholder_name: "",
+    card_number: "",
+    card_expiry: "",
+    card_cvc: "",
+  });
 
-  const handleSubmit = (e) => {
+  // Load checkout summary
+  useEffect(() => {
+    loadCheckoutSummary();
+  }, []);
+
+  const loadCheckoutSummary = async () => {
+    try {
+      const csrfToken = getCsrfToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      };
+      
+      if (csrfToken) {
+        headers['X-XSRF-TOKEN'] = csrfToken;
+      }
+
+      const response = await fetch('/api/checkout', {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCheckoutData(data);
+      } else if (response.status === 401) {
+        toast.error('Please log in to checkout');
+        router.visit('/auth');
+      }
+    } catch (error) {
+      console.error('Failed to load checkout:', error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (step < 3) {
       setStep(step + 1);
-    } else {
-      toast.success("Order placed successfully! Thank you for your purchase.");
+      return;
+    }
+
+    // Final step - submit order
+    setIsLoading(true);
+    
+    try {
+      // Format payment method
+      const last4 = formData.card_number.slice(-4);
+      const paymentMethod = `Card •••• ${last4}`;
+
+      const csrfToken = getCsrfToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      };
+      
+      if (csrfToken) {
+        headers['X-XSRF-TOKEN'] = csrfToken;
+      }
+
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          shipping_name: formData.shipping_name,
+          shipping_address: formData.shipping_address,
+          shipping_city: formData.shipping_city,
+          shipping_state: formData.shipping_state,
+          shipping_zip_code: formData.shipping_zip_code,
+          shipping_country: formData.shipping_country || "United States",
+          shipping_phone: formData.shipping_phone,
+          payment_method: paymentMethod,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success("Order placed successfully! Thank you for your purchase.");
+        await refreshCart();
+        router.visit(`/orders/${data.order.id}`);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to place order');
+      }
+    } catch (error) {
+      console.error('Failed to place order:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -32,6 +140,11 @@ function CheckoutContent() {
       </div>
     );
   }
+
+  const subtotal = checkoutData?.subtotal || totalPrice;
+  const shipping = checkoutData?.shipping || 0;
+  const tax = checkoutData?.tax || Math.round(totalPrice * 0.08);
+  const total = checkoutData?.total || Math.round(totalPrice * 1.08);
 
   return (
     <div className="min-h-screen pt-24 pb-16">
@@ -89,14 +202,19 @@ function CheckoutContent() {
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
-                      placeholder="First Name"
+                      name="shipping_name"
+                      placeholder="Full Name"
+                      value={formData.shipping_name}
+                      onChange={handleInputChange}
                       className="bg-card border-border h-12"
                       required
                     />
                     <Input
-                      placeholder="Last Name"
+                      name="shipping_phone"
+                      placeholder="Phone Number"
+                      value={formData.shipping_phone}
+                      onChange={handleInputChange}
                       className="bg-card border-border h-12"
-                      required
                     />
                   </div>
                   <Input
@@ -106,30 +224,46 @@ function CheckoutContent() {
                     required
                   />
                   <Input
+                    name="shipping_address"
                     placeholder="Address"
+                    value={formData.shipping_address}
+                    onChange={handleInputChange}
                     className="bg-card border-border h-12"
                     required
                   />
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Input
+                      name="shipping_city"
                       placeholder="City"
+                      value={formData.shipping_city}
+                      onChange={handleInputChange}
                       className="bg-card border-border h-12"
                       required
                     />
                     <Input
+                      name="shipping_state"
                       placeholder="State"
+                      value={formData.shipping_state}
+                      onChange={handleInputChange}
                       className="bg-card border-border h-12"
                       required
                     />
                     <Input
+                      name="shipping_zip_code"
                       placeholder="ZIP Code"
+                      value={formData.shipping_zip_code}
+                      onChange={handleInputChange}
                       className="bg-card border-border h-12"
                       required
                     />
                   </div>
                   <Input
-                    placeholder="Phone Number"
+                    name="shipping_country"
+                    placeholder="Country"
+                    value={formData.shipping_country}
+                    onChange={handleInputChange}
                     className="bg-card border-border h-12"
+                    defaultValue="United States"
                   />
                 </div>
               )}
@@ -148,25 +282,40 @@ function CheckoutContent() {
                     </span>
                   </div>
                   <Input
+                    name="cardholder_name"
                     placeholder="Cardholder Name"
+                    value={formData.cardholder_name}
+                    onChange={handleInputChange}
                     className="bg-card border-border h-12"
                     required
                   />
                   <Input
+                    name="card_number"
                     placeholder="Card Number"
+                    value={formData.card_number}
+                    onChange={handleInputChange}
                     className="bg-card border-border h-12"
                     required
+                    maxLength={19}
                   />
                   <div className="grid grid-cols-2 gap-4">
                     <Input
+                      name="card_expiry"
                       placeholder="MM/YY"
+                      value={formData.card_expiry}
+                      onChange={handleInputChange}
                       className="bg-card border-border h-12"
                       required
+                      maxLength={5}
                     />
                     <Input
+                      name="card_cvc"
                       placeholder="CVC"
+                      value={formData.card_cvc}
+                      onChange={handleInputChange}
                       className="bg-card border-border h-12"
                       required
+                      maxLength={4}
                     />
                   </div>
                 </div>
@@ -213,12 +362,13 @@ function CheckoutContent() {
                     variant="outline"
                     size="lg"
                     onClick={() => setStep(step - 1)}
+                    disabled={isLoading}
                   >
                     Back
                   </Button>
                 )}
-                <Button type="submit" size="lg" className="flex-1">
-                  {step === 3 ? "Place Order" : "Continue"}
+                <Button type="submit" size="lg" className="flex-1" disabled={isLoading}>
+                  {isLoading ? "Processing..." : step === 3 ? "Place Order" : "Continue"}
                 </Button>
               </div>
             </form>
@@ -255,7 +405,7 @@ function CheckoutContent() {
               <div className="border-t border-border pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>${totalPrice.toLocaleString()}</span>
+                  <span>${subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
@@ -263,7 +413,7 @@ function CheckoutContent() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tax</span>
-                  <span>${Math.round(totalPrice * 0.08).toLocaleString()}</span>
+                  <span>${tax.toLocaleString()}</span>
                 </div>
               </div>
 
@@ -271,7 +421,7 @@ function CheckoutContent() {
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <span className="text-gradient">
-                    ${Math.round(totalPrice * 1.08).toLocaleString()}
+                    ${total.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -295,4 +445,3 @@ export default function Checkout() {
     </Layout>
   );
 }
-

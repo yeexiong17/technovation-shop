@@ -5,77 +5,34 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { products } from "@/data/products";
+import { Link } from "@inertiajs/react";
 import { cn } from "@/lib/utils";
+import { usePage } from "@inertiajs/react";
 
-const stats = [
-  {
-    label: "Total Revenue",
-    value: "$124,500",
-    change: "+12.5%",
-    icon: DollarSign,
-    positive: true,
-  },
-  {
-    label: "Total Orders",
-    value: "1,234",
-    change: "+8.2%",
-    icon: ShoppingBag,
-    positive: true,
-  },
-  {
-    label: "Active Users",
-    value: "5,678",
-    change: "+23.1%",
-    icon: Users,
-    positive: true,
-  },
-  {
-    label: "Conversion Rate",
-    value: "3.2%",
-    change: "-0.4%",
-    icon: TrendingUp,
-    positive: false,
-  },
-];
-
-const recentOrders = [
-  {
-    id: "#ORD-001",
-    customer: "John Doe",
-    product: "Nova Pro Laptop",
-    amount: "$1,999",
-    status: "Completed",
-  },
-  {
-    id: "#ORD-002",
-    customer: "Jane Smith",
-    product: "Quantum Phone X",
-    amount: "$1,199",
-    status: "Processing",
-  },
-  {
-    id: "#ORD-003",
-    customer: "Bob Wilson",
-    product: "AeroSound Pro",
-    amount: "$349",
-    status: "Shipped",
-  },
-  {
-    id: "#ORD-004",
-    customer: "Alice Brown",
-    product: "SmartWatch Pro",
-    amount: "$449",
-    status: "Pending",
-  },
-];
+const iconMap = {
+  "Total Revenue": DollarSign,
+  "Total Orders": ShoppingBag,
+  "Active Users": Users,
+  "Conversion Rate": TrendingUp,
+};
 
 export default function AdminDashboard() {
+  const { props } = usePage();
+  const dashboard = props.dashboard || {};
+  const stats = dashboard.stats || [];
+  const recentOrders = dashboard.recentOrders || [];
+  const topProducts = dashboard.topProducts || [];
+
+  // Add icons to stats
+  const statsWithIcons = stats.map(stat => ({
+    ...stat,
+    icon: iconMap[stat.label] || TrendingUp,
+  }));
   return (
     <div className="p-6 space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
+        {statsWithIcons.map((stat) => (
           <div
             key={stat.label}
             className="p-6 rounded-2xl bg-card border border-border"
@@ -104,9 +61,11 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2 rounded-2xl bg-card border border-border">
           <div className="p-6 border-b border-border flex items-center justify-between">
             <h2 className="text-lg font-semibold">Recent Orders</h2>
-            <Button variant="ghost" size="sm">
-              View All
-            </Button>
+            <Link href="/admin/orders">
+              <Button variant="ghost" size="sm">
+                View All
+              </Button>
+            </Link>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -123,13 +82,13 @@ export default function AdminDashboard() {
                       <span
                         className={cn(
                           "px-2 py-0.5 rounded-full text-xs font-medium",
-                          order.status === "Completed" &&
+                          (order.status === "Completed" || order.status === "Delivered") &&
                             "bg-green-500/10 text-green-500",
                           order.status === "Processing" &&
                             "bg-blue-500/10 text-blue-500",
                           order.status === "Shipped" &&
                             "bg-purple-500/10 text-purple-500",
-                          order.status === "Pending" &&
+                          (order.status === "Pending" || order.status === "pending") &&
                             "bg-yellow-500/10 text-yellow-500"
                         )}
                       >
@@ -151,12 +110,14 @@ export default function AdminDashboard() {
         <div className="rounded-2xl bg-card border border-border">
           <div className="p-6 border-b border-border flex items-center justify-between">
             <h2 className="text-lg font-semibold">Top Products</h2>
-            <Button variant="ghost" size="sm">
-              View All
-            </Button>
+            <Link href="/admin/products">
+              <Button variant="ghost" size="sm">
+                View All
+              </Button>
+            </Link>
           </div>
           <div className="p-6 space-y-4">
-            {products.slice(0, 4).map((product, index) => (
+            {topProducts.length > 0 ? topProducts.map((product, index) => (
               <div key={product.id} className="flex items-center gap-3">
                 <span className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs font-medium">
                   {index + 1}
@@ -175,10 +136,14 @@ export default function AdminDashboard() {
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {product.reviews} sold
+                  {product.sold} sold
                 </span>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No products sold yet</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

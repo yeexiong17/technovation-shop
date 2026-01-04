@@ -8,60 +8,27 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePage } from "@inertiajs/react";
 
-const stats = [
-  {
-    label: "Total Revenue",
-    value: "$124,500",
-    change: "+12.5%",
-    changeValue: 12450,
-    icon: DollarSign,
-    positive: true,
-  },
-  {
-    label: "Total Orders",
-    value: "1,234",
-    change: "+8.2%",
-    changeValue: 98,
-    icon: ShoppingBag,
-    positive: true,
-  },
-  {
-    label: "Active Users",
-    value: "5,678",
-    change: "+23.1%",
-    changeValue: 1065,
-    icon: Users,
-    positive: true,
-  },
-  {
-    label: "Conversion Rate",
-    value: "3.2%",
-    change: "-0.4%",
-    changeValue: -0.4,
-    icon: TrendingUp,
-    positive: false,
-  },
-];
+const iconMap = {
+  "Total Revenue": DollarSign,
+  "Total Orders": ShoppingBag,
+  "Active Users": Users,
+  "Conversion Rate": TrendingUp,
+};
 
-const topProducts = [
-  { name: "Nova Pro Laptop", sales: 245, revenue: 489755 },
-  { name: "Quantum Phone X", sales: 189, revenue: 226611 },
-  { name: "GameStation Elite", sales: 156, revenue: 93444 },
-  { name: "AeroSound Pro", sales: 142, revenue: 49558 },
-  { name: "SmartWatch Pro", sales: 98, revenue: 44002 },
-];
-
-const salesData = [
-  { month: "Jan", sales: 45000 },
-  { month: "Feb", sales: 52000 },
-  { month: "Mar", sales: 48000 },
-  { month: "Apr", sales: 61000 },
-  { month: "May", sales: 55000 },
-  { month: "Jun", sales: 67000 },
-];
-
-export default function AdminAnalytics() {
+export default function AdminAnalytics({ analytics: initialAnalytics }) {
+  const { props } = usePage();
+  const analytics = initialAnalytics || props.analytics || {};
+  
+  const stats = (analytics.stats || []).map(stat => ({
+    ...stat,
+    icon: iconMap[stat.label] || TrendingUp,
+  }));
+  
+  const salesData = analytics.salesData || [];
+  const topProducts = analytics.topProducts || [];
+  const metrics = analytics.metrics || [];
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -74,7 +41,7 @@ export default function AdminAnalytics() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
+        {stats.length > 0 ? stats.map((stat) => (
           <div
             key={stat.label}
             className="p-6 rounded-2xl bg-card border border-border"
@@ -102,7 +69,11 @@ export default function AdminAnalytics() {
             <h3 className="text-2xl font-bold mb-1">{stat.value}</h3>
             <p className="text-sm text-muted-foreground">{stat.label}</p>
           </div>
-        ))}
+        )) : (
+          <div className="col-span-4 text-center py-8 text-muted-foreground">
+            <p>No analytics data available</p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -117,15 +88,18 @@ export default function AdminAnalytics() {
             </select>
           </div>
           <div className="space-y-4">
-            {salesData.map((data, index) => {
-              const maxSales = Math.max(...salesData.map((d) => d.sales));
-              const percentage = (data.sales / maxSales) * 100;
+            {salesData.length > 0 ? salesData.map((data, index) => {
+              const maxSales = Math.max(...salesData.map((d) => d.sales || 0), 1);
+              const percentage = maxSales > 0 ? ((data.sales || 0) / maxSales) * 100 : 0;
               return (
-                <div key={data.month} className="space-y-2">
+                <div key={data.month || index} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">{data.month}</span>
                     <span className="text-muted-foreground">
-                      ${data.sales.toLocaleString()}
+                      ${(data.sales || 0).toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </span>
                   </div>
                   <div className="h-2 bg-secondary rounded-full overflow-hidden">
@@ -136,7 +110,11 @@ export default function AdminAnalytics() {
                   </div>
                 </div>
               );
-            })}
+            }) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No sales data available</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -144,8 +122,8 @@ export default function AdminAnalytics() {
         <div className="rounded-2xl bg-card border border-border p-6">
           <h3 className="text-lg font-semibold mb-6">Top Selling Products</h3>
           <div className="space-y-4">
-            {topProducts.map((product, index) => (
-              <div key={product.name} className="flex items-center gap-4">
+            {topProducts.length > 0 ? topProducts.map((product, index) => (
+              <div key={product.name || index} className="flex items-center gap-4">
                 <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm font-medium">
                   {index + 1}
                 </div>
@@ -157,43 +135,72 @@ export default function AdminAnalytics() {
                 </div>
                 <div className="text-right">
                   <p className="font-medium">
-                    ${product.revenue.toLocaleString()}
+                    ${(product.revenue || 0).toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No products sold yet</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Additional Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="rounded-2xl bg-card border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold">Average Order Value</h4>
-            <TrendingUp className="w-5 h-5 text-green-500" />
-          </div>
-          <p className="text-3xl font-bold mb-1">$101.23</p>
-          <p className="text-sm text-muted-foreground">+5.2% from last month</p>
-        </div>
-
-        <div className="rounded-2xl bg-card border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold">Customer Lifetime Value</h4>
-            <TrendingUp className="w-5 h-5 text-green-500" />
-          </div>
-          <p className="text-3xl font-bold mb-1">$1,247</p>
-          <p className="text-sm text-muted-foreground">+12.8% from last month</p>
-        </div>
-
-        <div className="rounded-2xl bg-card border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold">Return Rate</h4>
-            <TrendingDown className="w-5 h-5 text-red-500" />
-          </div>
-          <p className="text-3xl font-bold mb-1">2.3%</p>
-          <p className="text-sm text-muted-foreground">-0.5% from last month</p>
-        </div>
+        {metrics.length > 0 ? metrics.map((metric, index) => {
+          const metricLabels = ['Average Order Value', 'Customer Lifetime Value', 'Return Rate'];
+          const metricIcons = [TrendingUp, TrendingUp, TrendingDown];
+          const Icon = metricIcons[index] || TrendingUp;
+          
+          return (
+            <div key={metric.label || index} className="rounded-2xl bg-card border border-border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold">{metric.label || metricLabels[index]}</h4>
+                <Icon className={cn(
+                  "w-5 h-5",
+                  metric.positive !== false ? "text-green-500" : "text-red-500"
+                )} />
+              </div>
+              <p className="text-3xl font-bold mb-1">{metric.value || 'N/A'}</p>
+              <p className="text-sm text-muted-foreground">
+                {metric.change || '0%'} from last month
+              </p>
+            </div>
+          );
+        }) : (
+          <>
+            <div className="rounded-2xl bg-card border border-border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold">Average Order Value</h4>
+                <TrendingUp className="w-5 h-5 text-green-500" />
+              </div>
+              <p className="text-3xl font-bold mb-1">$0.00</p>
+              <p className="text-sm text-muted-foreground">No data available</p>
+            </div>
+            <div className="rounded-2xl bg-card border border-border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold">Customer Lifetime Value</h4>
+                <TrendingUp className="w-5 h-5 text-green-500" />
+              </div>
+              <p className="text-3xl font-bold mb-1">$0.00</p>
+              <p className="text-sm text-muted-foreground">No data available</p>
+            </div>
+            <div className="rounded-2xl bg-card border border-border p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold">Return Rate</h4>
+                <TrendingDown className="w-5 h-5 text-red-500" />
+              </div>
+              <p className="text-3xl font-bold mb-1">0%</p>
+              <p className="text-sm text-muted-foreground">No data available</p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
