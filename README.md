@@ -1,58 +1,195 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Technovation Shop
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A modern e-commerce application built with Laravel and React, using Inertia.js for seamless server-side and client-side integration.
 
-## About Laravel
+## Technology Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Backend**: Laravel 12 (PHP 8.2+)
+- **Frontend**: React 18 with Inertia.js
+- **UI Components**: Radix UI, Tailwind CSS
+- **Build Tool**: Vite
+- **State Management**: React Query (TanStack Query)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Project Structure
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### PHP Files (Backend)
 
-## Learning Laravel
+All PHP application files are located in the `app/` directory:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- **Controllers**: `app/Http/Controllers/`
+  - `HomeController.php` - Home page controller
+  - `ProductController.php` - Product management controller
+  - `Controller.php` - Base controller
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Models**: `app/Models/`
+  - `User.php` - User model
 
-## Laravel Sponsors
+- **Middleware**: `app/Http/Middleware/`
+  - `HandleInertiaRequests.php` - Inertia.js middleware
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- **Providers**: `app/Providers/`
+  - `AppServiceProvider.php` - Application service provider
 
-### Premium Partners
+- **Routes**: `routes/web.php` - Web routes definition
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- **Database**: `database/`
+  - `migrations/` - Database migrations
+  - `seeders/` - Database seeders
+  - `factories/` - Model factories
 
-## Contributing
+- **Tests**: `tests/`
+  - `Feature/` - Feature tests
+  - `Unit/` - Unit tests
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### React Files (Frontend)
 
-## Code of Conduct
+All React/JavaScript files are located in the `resources/js/` directory:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- **Main Entry**: `resources/js/app.jsx` - Main React application entry point
+- **Layout**: `resources/js/Layout.jsx` - Main layout component
 
-## Security Vulnerabilities
+- **Pages**: `resources/js/pages/`
+  - React page components (17 files) that correspond to routes
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- **Components**: `resources/js/components/`
+  - `admin/` - Admin panel components
+  - `cart/` - Shopping cart components
+  - `home/` - Home page components (5 files)
+  - `layout/` - Layout components (2 files)
+  - `products/` - Product-related components
+  - `ui/` - Reusable UI components (9 files)
+  - `NavLink.jsx` - Navigation link component
+
+- **Context**: `resources/js/context/`
+  - `CartContext.jsx` - Shopping cart context provider
+
+- **Hooks**: `resources/js/hooks/`
+  - `use-mobile.jsx` - Mobile detection hook
+  - `use-toast.js` - Toast notification hook
+
+- **Data**: `resources/js/data/`
+  - `products.js` - Product data
+
+- **Utilities**: `resources/js/lib/`
+  - `utils.js` - Utility functions
+
+- **Configuration**: `resources/js/bootstrap.js` - Bootstrap configuration
+
+### Views
+
+- **Blade Templates**: `resources/views/`
+  - `app.blade.php` - Main application template (Inertia.js root)
+  - `welcome.blade.php` - Welcome page
+
+### Assets
+
+- **CSS**: `resources/css/app.css` - Main stylesheet
+- **Public Assets**: `public/` - Publicly accessible files
+
+## Getting Started
+
+### Prerequisites
+
+- PHP 8.2 or higher
+- Composer
+- Node.js and npm
+- SQLite (or your preferred database)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd technovation-shop
+```
+
+2. Install PHP dependencies:
+```bash
+composer install
+```
+
+3. Install JavaScript dependencies:
+```bash
+npm install
+```
+
+4. Set up environment:
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+5. Set up database:
+```bash
+php artisan migrate
+```
+
+6. Build assets:
+```bash
+npm run build
+```
+
+Or use the setup script:
+```bash
+composer run setup
+```
+
+## Development
+
+### Running the Development Server
+
+**Quick Start (Single Terminal):**
+
+Make the script executable:
+```bash
+chmod +x ./start-dev.sh
+```
+Use the convenience script to start both Laravel and Vite servers in a single terminal:
+```bash
+./start-dev.sh
+```
+
+This will start both the Laravel backend server and Vite dev server without needing to open multiple terminals. Press `Ctrl+C` to stop both servers.
+
+**Alternative Options:**
+
+Start all development services (Laravel server, queue worker, logs, and Vite):
+```bash
+composer run dev
+```
+
+Or run services individually in separate terminals:
+
+- Laravel server: `php artisan serve`
+- Vite dev server: `npm run dev`
+- Queue worker: `php artisan queue:listen`
+- Logs: `php artisan pail`
+
+### Building for Production
+
+```bash
+npm run build
+```
+
+### Running Tests
+
+```bash
+composer run test
+```
+
+Or:
+```bash
+php artisan test
+```
+
+## Project Features
+
+- Product catalog and management
+- Shopping cart functionality
+- User authentication
+- Order management
+- Admin dashboard
+- Responsive design with Tailwind CSS
 
 ## License
 
