@@ -1,4 +1,4 @@
-import { Link, usePage } from "@inertiajs/react";
+import { Link, usePage, router } from "@inertiajs/react";
 import { ArrowLeft, Star, Minus, Plus, ShoppingBag, MessageSquare, User, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,22 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import Layout from "@/Layout";
 
-const ProductDetailContent = ({ product, relatedProducts = [] }) => {
+const ProductDetailContent = ({ product: initialProduct, relatedProducts = [] }) => {
   const { addToCart } = useCart();
+  const { props } = usePage();
+  const auth = props?.auth;
+  const user = auth?.user;
+  const [product, setProduct] = useState(initialProduct);
   const [quantity, setQuantity] = useState(1);
   const [userRating, setUserRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
-  const [userName, setUserName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Update product when initialProduct changes
+  useEffect(() => {
+    setProduct(initialProduct);
+  }, [initialProduct]);
+
   // Ensure reviews is always an array
   const formatReviews = (reviewsData) => {
     if (!reviewsData) {
@@ -48,12 +56,30 @@ const ProductDetailContent = ({ product, relatedProducts = [] }) => {
 
   const [reviews, setReviews] = useState(formatReviews(product?.reviews));
 
+  // Find user's existing review (if any) - match by user ID
+  const userReview = user && reviews.find(review =>
+    review && review.userId && review.userId === String(user.id)
+  );
+
   // Update reviews when product changes
   useEffect(() => {
     if (product?.reviews) {
       setReviews(formatReviews(product.reviews));
+    } else {
+      setReviews([]);
     }
   }, [product]);
+
+  // Pre-populate form if user has already reviewed
+  useEffect(() => {
+    if (userReview && user) {
+      setUserRating(userReview.rating || 0);
+      setReviewText(userReview.comment || "");
+    } else {
+      setUserRating(0);
+      setReviewText("");
+    }
+  }, [userReview, user]);
 
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i++) {
@@ -61,25 +87,35 @@ const ProductDetailContent = ({ product, relatedProducts = [] }) => {
     }
   };
 
-  // Calculate rating statistics
+  // Calculate rating statistics from actual reviews
   const ratingStats = (reviews || []).reduce((acc, review) => {
     if (review && typeof review === 'object' && 'rating' in review) {
-      acc[review.rating] = (acc[review.rating] || 0) + 1;
+      const rating = parseInt(review.rating) || 0;
+      acc[rating] = (acc[rating] || 0) + 1;
     }
     return acc;
   }, {});
 
   const totalReviews = (reviews || []).length;
+
+  // Calculate average rating from actual reviews, fallback to product.rating if no reviews
   const averageRating = totalReviews > 0
     ? (reviews || []).reduce((sum, review) => {
       if (review && typeof review === 'object' && 'rating' in review) {
-        return sum + (review.rating || 0);
+        return sum + (parseInt(review.rating) || 0);
       }
       return sum;
     }, 0) / totalReviews
-    : (product?.rating || 0);
+    : (parseFloat(product?.reviews?.average_rating) || 0);
+
+  // Use calculated average rating for display (more accurate than stored rating)
+  const displayRating = averageRating;
 
   const handleSubmitReview = () => {
+    if (!user) {
+      toast.error("Please log in to submit a review");
+      return;
+    }
     if (userRating === 0) {
       toast.error("Please select a rating");
       return;
@@ -88,29 +124,38 @@ const ProductDetailContent = ({ product, relatedProducts = [] }) => {
       toast.error("Please write a review");
       return;
     }
-    if (!userName.trim()) {
-      toast.error("Please enter your name");
-      return;
-    }
 
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      const newReview = {
-        id: `rev-${Date.now()}`,
-        userName: userName.trim(),
+
+    router.post(
+      `/products/${product.id}/review`,
+      {
         rating: userRating,
-        date: new Date().toISOString().split("T")[0],
         comment: reviewText.trim(),
-        verified: false,
-      };
-      setReviews([newReview, ...reviews]);
-      setUserRating(0);
-      setReviewText("");
-      setUserName("");
-      setIsSubmitting(false);
-      toast.success("Thank you for your review!");
-    }, 1000);
+      },
+      {
+        onSuccess: (page) => {
+          // Product data will be refreshed automatically via Inertia
+          // The page will reload with updated product data
+          setUserRating(0);
+          setReviewText("");
+          setIsSubmitting(false);
+          toast.success("Thank you for your review!");
+        },
+        onError: (errors) => {
+          setIsSubmitting(false);
+          if (errors.rating) {
+            toast.error(errors.rating);
+          } else if (errors.comment) {
+            toast.error(errors.comment);
+          } else if (errors.review) {
+            toast.error(errors.review);
+          } else {
+            toast.error("Failed to submit review. Please try again.");
+          }
+        },
+      }
+    );
   };
 
   const formatDate = (dateString) => {
@@ -160,18 +205,22 @@ const ProductDetailContent = ({ product, relatedProducts = [] }) => {
             {/* Rating */}
             <div className="flex items-center gap-2 mb-6">
               <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${i < Math.floor(product.rating || 0)
-                      ? "fill-primary text-primary"
-                      : "text-muted-foreground/30"
-                      }`}
-                  />
-                ))}
+                {[...Array(5)].map((_, i) => {
+                  // Use averageRating calculated from reviews, or fallback to product.rating
+                  const ratingToShow = totalReviews > 0 ? averageRating : (parseFloat(product?.rating) || 0);
+                  return (
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${i < Math.floor(ratingToShow)
+                        ? "fill-primary text-primary"
+                        : "text-muted-foreground/30"
+                        }`}
+                    />
+                  );
+                })}
               </div>
               <span className="font-mono text-xs text-muted-foreground">
-                ({product.reviews.length || product.reviews_count || 0} reviews)
+                ({totalReviews || product?.reviews_count || 0} reviews)
               </span>
             </div>
 
@@ -262,17 +311,20 @@ const ProductDetailContent = ({ product, relatedProducts = [] }) => {
                 <div className="border border-border rounded-lg p-6">
                   <div className="text-center mb-6">
                     <div className="flex items-center justify-center gap-1 mb-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={cn(
-                            "w-6 h-6",
-                            i < Math.floor(averageRating)
-                              ? "fill-primary text-primary"
-                              : "text-muted-foreground/30"
-                          )}
-                        />
-                      ))}
+                      {[...Array(5)].map((_, i) => {
+                        const ratingToShow = totalReviews > 0 ? averageRating : (parseFloat(product?.rating) || 0);
+                        return (
+                          <Star
+                            key={i}
+                            className={cn(
+                              "w-6 h-6",
+                              i < Math.floor(ratingToShow)
+                                ? "fill-primary text-primary"
+                                : "text-muted-foreground/30"
+                            )}
+                          />
+                        );
+                      })}
                     </div>
                     <p className="font-display text-4xl font-semibold mb-1">
                       {averageRating.toFixed(1)}
@@ -314,70 +366,78 @@ const ProductDetailContent = ({ product, relatedProducts = [] }) => {
                 <div className="border border-border rounded-lg p-6">
                   <h3 className="font-display text-xl mb-6 flex items-center gap-2">
                     <MessageSquare className="w-5 h-5" />
-                    Write a Review
+                    {userReview ? "Edit Your Review" : "Write a Review"}
                   </h3>
-                  <div className="space-y-6">
-                    <div>
-                      <label className="text-sm font-medium mb-3 block">Your Name</label>
-                      <Input
-                        value={userName}
-                        onChange={(e) => setUserName(e.target.value)}
-                        placeholder="Enter your name"
-                        className="bg-transparent border-border"
-                      />
+                  {!user ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground mb-4">
+                        Please log in to write a review
+                      </p>
+                      <Link href="/auth">
+                        <Button>Log In</Button>
+                      </Link>
                     </div>
-
-                    <div>
-                      <label className="text-sm font-medium mb-3 block">Your Rating</label>
-                      <div className="flex items-center gap-2">
-                        {[...Array(5)].map((_, i) => {
-                          const starValue = i + 1;
-                          return (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => setUserRating(starValue)}
-                              onMouseEnter={() => setHoveredRating(starValue)}
-                              onMouseLeave={() => setHoveredRating(0)}
-                              className="focus:outline-none"
-                            >
-                              <Star
-                                className={cn(
-                                  "w-8 h-8 transition-colors",
-                                  starValue <= (hoveredRating || userRating)
-                                    ? "fill-primary text-primary"
-                                    : "text-muted-foreground/30"
-                                )}
-                              />
-                            </button>
-                          );
-                        })}
-                        {userRating > 0 && (
-                          <span className="ml-2 text-sm text-muted-foreground">
-                            {userRating} {userRating === 1 ? "star" : "stars"}
-                          </span>
-                        )}
+                  ) : (
+                    <div className="space-y-6">
+                      {userReview && (
+                        <div className="bg-muted/50 border border-border rounded-lg p-4 mb-4">
+                          <p className="text-sm text-muted-foreground">
+                            You've already reviewed this product. You can update your review below.
+                          </p>
+                        </div>
+                      )}
+                      <div>
+                        <label className="text-sm font-medium mb-3 block">Your Rating</label>
+                        <div className="flex items-center gap-2">
+                          {[...Array(5)].map((_, i) => {
+                            const starValue = i + 1;
+                            return (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => setUserRating(starValue)}
+                                onMouseEnter={() => setHoveredRating(starValue)}
+                                onMouseLeave={() => setHoveredRating(0)}
+                                className="focus:outline-none"
+                              >
+                                <Star
+                                  className={cn(
+                                    "w-8 h-8 transition-colors",
+                                    starValue <= (hoveredRating || userRating)
+                                      ? "fill-primary text-primary"
+                                      : "text-muted-foreground/30"
+                                  )}
+                                />
+                              </button>
+                            );
+                          })}
+                          {userRating > 0 && (
+                            <span className="ml-2 text-sm text-muted-foreground">
+                              {userRating} {userRating === 1 ? "star" : "stars"}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="text-sm font-medium mb-3 block">Your Review</label>
-                      <textarea
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                        placeholder="Share your experience with this product..."
-                        className="w-full min-h-[120px] px-4 py-3 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
-                      />
-                    </div>
+                      <div>
+                        <label className="text-sm font-medium mb-3 block">Your Review</label>
+                        <textarea
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
+                          placeholder="Share your experience with this product..."
+                          className="w-full min-h-[120px] px-4 py-3 rounded-md border border-border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                        />
+                      </div>
 
-                    <Button
-                      onClick={handleSubmitReview}
-                      disabled={isSubmitting || userRating === 0 || !reviewText.trim() || !userName.trim()}
-                      className="w-full"
-                    >
-                      {isSubmitting ? "Submitting..." : "Submit Review"}
-                    </Button>
-                  </div>
+                      <Button
+                        onClick={handleSubmitReview}
+                        disabled={isSubmitting || userRating === 0 || !reviewText.trim()}
+                        className="w-full"
+                      >
+                        {isSubmitting ? "Submitting..." : "Submit Review"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
