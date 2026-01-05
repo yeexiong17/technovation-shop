@@ -101,6 +101,70 @@ Then run:
 php artisan db:seed
 ```
 
+## Step 6: Create Admin Account
+
+To create an admin account for accessing the admin dashboard, run the AdminUserSeeder:
+
+```bash
+php artisan db:seed --class=AdminUserSeeder
+```
+
+This will create an admin user with the following credentials:
+- **Email:** `admin@technovation.com`
+- **Password:** `password`
+- **Admin Status:** `true`
+
+### Customize Admin Account
+
+To create an admin account with custom credentials, edit the `database/seeders/AdminUserSeeder.php` file:
+
+```php
+User::firstOrCreate(
+    ['email' => 'your-admin@email.com'],  // Change email here
+    [
+        'name' => 'Your Admin Name',        // Change name here
+        'password' => Hash::make('your-secure-password'),  // Change password here
+        'is_admin' => true,
+    ]
+);
+```
+
+Then run the seeder:
+```bash
+php artisan db:seed --class=AdminUserSeeder
+```
+
+### Alternative: Create Admin Account Manually
+
+You can also create an admin account manually using Laravel Tinker:
+
+```bash
+php artisan tinker
+```
+
+Then run:
+```php
+$user = App\Models\User::create([
+    'name' => 'Admin',
+    'email' => 'admin@technovation.com',
+    'password' => Hash::make('your-secure-password'),
+    'is_admin' => true,
+]);
+```
+
+Or directly in the database:
+```sql
+INSERT INTO users (name, email, password, is_admin, created_at, updated_at)
+VALUES (
+    'Admin',
+    'admin@technovation.com',
+    '$2y$12$YourHashedPasswordHere',  -- Use Hash::make() in Laravel to generate
+    true,
+    NOW(),
+    NOW()
+);
+```
+
 ## Database Schema Overview
 
 ### Core Tables
@@ -164,15 +228,31 @@ php artisan migrate:fresh
 
 3. Check for foreign key constraint issues - ensure tables are created in the correct order.
 
+## Step 7: Access Admin Dashboard
+
+After creating an admin account, you can access the admin dashboard:
+
+1. Navigate to `/auth` and sign in with your admin credentials
+2. You will be automatically redirected to `/admin` dashboard
+3. Admin users can:
+   - View and manage products
+   - View and update orders
+   - Manage customers
+   - View analytics
+   - Update order statuses and tracking numbers
+
+**Note:** Admin users are automatically redirected to `/admin` and cannot access regular user pages.
+
 ## Next Steps
 
 After setting up the database:
 
-1. Create Eloquent models for each table
-2. Set up relationships in the models
-3. Create controllers to handle database operations
-4. Implement API endpoints or Inertia.js data sharing
-5. Create seeders for initial data
+1. ✅ Eloquent models are already created for each table
+2. ✅ Relationships are set up in the models
+3. ✅ Controllers handle database operations
+4. ✅ API endpoints and Inertia.js data sharing are implemented
+5. ✅ Seeders are available for initial data
+6. ✅ Admin account seeder is available
 
 ## Useful Commands
 
@@ -194,5 +274,16 @@ php artisan migrate:status
 
 # Create a new migration
 php artisan make:migration create_table_name
+
+# Seed database (runs all seeders)
+php artisan db:seed
+
+# Seed specific seeder
+php artisan db:seed --class=AdminUserSeeder
+php artisan db:seed --class=CategorySeeder
+php artisan db:seed --class=ProductSeeder
+
+# Fresh migration with seeding
+php artisan migrate:fresh --seed
 ```
 

@@ -93,7 +93,8 @@ All React/JavaScript files are located in the `resources/js/` directory:
 - PHP 8.2 or higher
 - Composer
 - Node.js and npm
-- SQLite (or your preferred database)
+- MariaDB (MySQL-compatible database server)
+- PHP extensions: PDO, PDO MySQL/MariaDB, OpenSSL, Mbstring, Tokenizer, XML, Ctype, JSON, BCMath
 
 ### Installation
 
@@ -120,25 +121,21 @@ php artisan key:generate
 ```
 
 5. Set up database:
+   - See [DATABASE_SETUP.md](DATABASE_SETUP.md) for detailed MariaDB setup instructions
+   - Configure your `.env` file with database credentials
+   - Run migrations:
 ```bash
 php artisan migrate
-```
-
-6. Build assets:
-```bash
-npm run build
-```
-
-Or use the setup script:
-```bash
-composer run setup
+php artisan db:seed --class=CategorySeeder
+php artisan db:seed --class=ProductSeeder
+php artisan db:seed --class=AdminUserSeeder
 ```
 
 ## Development
 
 ### Running the Development Server
 
-**Quick Start (Single Terminal):**
+**Quick Start In Single Terminal (Recommended):**
 
 Make the script executable:
 ```bash
@@ -150,6 +147,11 @@ Use the convenience script to start both Laravel and Vite servers in a single te
 ```
 
 This will start both the Laravel backend server and Vite dev server without needing to open multiple terminals. Press `Ctrl+C` to stop both servers.
+
+To view the website, navigate to:
+```bash
+http://127.0.0.1:8000
+```
 
 **Alternative Options:**
 
@@ -181,15 +183,6 @@ Or:
 ```bash
 php artisan test
 ```
-
-## Project Features
-
-- Product catalog and management
-- Shopping cart functionality
-- User authentication
-- Order management
-- Admin dashboard
-- Responsive design with Tailwind CSS
 
 ## License
 
