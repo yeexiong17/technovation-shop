@@ -31,7 +31,7 @@ class ProfileController extends Controller
                 'state' => $user->state,
                 'zipCode' => $user->zip_code,
                 'country' => $user->country,
-                'memberSince' => $user->created_at->format('M Y'),
+                'memberSince' => $user->created_at->setTimezone(config('app.timezone'))->format('M Y'),
             ],
             'stats' => [
                 'totalOrders' => $totalOrders,

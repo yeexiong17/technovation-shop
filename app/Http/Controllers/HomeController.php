@@ -41,13 +41,20 @@ class HomeController extends Controller
 
     private function formatProduct($product)
     {
+        // Format image URL - if it's already a full URL (external), use it as is
+        // Otherwise, convert storage path to public URL
+        $imageUrl = $product->image;
+        if ($imageUrl && !str_starts_with($imageUrl, 'http')) {
+            $imageUrl = asset('storage/' . $imageUrl);
+        }
+        
         return [
             'id' => (string) $product->id,
             'name' => $product->name,
             'description' => $product->description,
             'price' => (float) $product->price,
             'originalPrice' => $product->original_price ? (float) $product->original_price : null,
-            'image' => $product->image,
+            'image' => $imageUrl,
             'category' => $product->category->slug,
             'rating' => $product->rating ? (float) $product->rating : null,
             'reviews' => $product->reviews_count,

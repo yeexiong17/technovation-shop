@@ -147,7 +147,7 @@ class AdminController extends Controller
                     'id' => $order->order_number,
                     'customer' => $order->user->name ?? $order->shipping_name,
                     'email' => $order->user->email ?? '',
-                    'date' => $order->created_at->format('Y-m-d'),
+                    'date' => $order->created_at->setTimezone(config('app.timezone'))->format('Y-m-d'),
                     'status' => $order->status,
                     'total' => (float) $order->total,
                     'items' => $order->orderItems->sum('quantity'),
@@ -258,7 +258,7 @@ class AdminController extends Controller
         return [
             'id' => (string) $order->id,
             'orderNumber' => $order->order_number,
-            'date' => $order->created_at->format('Y-m-d'),
+            'date' => $order->created_at->setTimezone(config('app.timezone'))->format('Y-m-d'),
             'status' => $order->status,
             'total' => (float) $order->total,
             'subtotal' => (float) $order->subtotal,
@@ -291,10 +291,11 @@ class AdminController extends Controller
                 ];
             }),
             'timeline' => $order->statusHistory->map(function ($history) {
+                $dateTime = $history->created_at->setTimezone(config('app.timezone'));
                 return [
                     'status' => $history->status,
-                    'date' => $history->created_at->format('Y-m-d'),
-                    'time' => $history->created_at->format('g:i A'),
+                    'date' => $dateTime->format('Y-m-d'),
+                    'time' => $dateTime->format('g:i A'),
                     'notes' => $history->notes,
                 ];
             })->sortBy('created_at')->values()->toArray(),
@@ -322,7 +323,7 @@ class AdminController extends Controller
                     'name' => $customer->name,
                     'email' => $customer->email,
                     'phone' => $customer->phone ?? 'N/A',
-                    'joinDate' => $customer->created_at->format('Y-m-d'),
+                    'joinDate' => $customer->created_at->setTimezone(config('app.timezone'))->format('Y-m-d'),
                     'totalOrders' => (int) $customer->orders_count,
                     'totalSpent' => (float) ($customer->orders_sum_total ?? 0),
                     'status' => 'active', // All customers are active by default

@@ -90,7 +90,7 @@ class OrderController extends Controller
         return [
             'id' => (string) $order->id, // Numeric ID for routes
             'orderNumber' => $order->order_number, // Display order number
-            'date' => $order->created_at->format('Y-m-d'),
+            'date' => $order->created_at->setTimezone(config('app.timezone'))->format('Y-m-d'),
             'status' => $order->status,
             'total' => (float) $order->total,
             'items' => $order->orderItems->map(function ($item) {
@@ -123,10 +123,11 @@ class OrderController extends Controller
         ];
         $formatted['paymentMethod'] = $order->payment_method;
         $formatted['timeline'] = $order->statusHistory->map(function ($history) {
+            $dateTime = $history->created_at->setTimezone(config('app.timezone'));
             return [
                 'status' => $history->status,
-                'date' => $history->created_at->format('Y-m-d'),
-                'time' => $history->created_at->format('g:i A'),
+                'date' => $dateTime->format('Y-m-d'),
+                'time' => $dateTime->format('g:i A'),
             ];
         })->toArray();
         $formatted['items'] = $order->orderItems->map(function ($item) {
@@ -155,7 +156,7 @@ class OrderController extends Controller
                 'id' => (string) $review->id,
                 'rating' => (int) $review->rating,
                 'comment' => $review->comment,
-                'date' => $review->created_at->format('Y-m-d'),
+                'date' => $review->created_at->setTimezone(config('app.timezone'))->format('Y-m-d'),
             ];
         }
 

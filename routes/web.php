@@ -26,14 +26,14 @@ Route::middleware('auth')->group(function () {
     // Redirect admins to admin dashboard if they try to access regular pages
     Route::middleware(\App\Http\Middleware\RedirectAdminToDashboard::class)->group(function () {
         // Product routes
-        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-        Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
         Route::post('/products/{id}/review', [ProductController::class, 'storeReview'])->name('products.review');
         
         // Category route
-        Route::get('/categories', function () {
-            return \Inertia\Inertia::render('Categories');
-        })->name('categories');
+Route::get('/categories', function () {
+    return \Inertia\Inertia::render('Categories');
+})->name('categories');
         
         // Profile routes
         Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile');
@@ -45,9 +45,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/orders/{id}/review', [OrderController::class, 'storeReview'])->name('orders.review');
         
         // Checkout route
-        Route::get('/checkout', function () {
-            return \Inertia\Inertia::render('Checkout');
-        })->name('checkout');
+Route::get('/checkout', function () {
+    return \Inertia\Inertia::render('Checkout');
+})->name('checkout');
         
         // Cart API routes
         Route::prefix('api/cart')->group(function () {
@@ -76,8 +76,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/orders/{id}/tracking', [\App\Http\Controllers\AdminController::class, 'updateTrackingNumber'])->name('admin.orders.updateTracking');
         Route::get('/customers', [\App\Http\Controllers\AdminController::class, 'customers'])->name('admin.customers');
         Route::get('/analytics', [\App\Http\Controllers\AdminController::class, 'analytics'])->name('admin.analytics');
-        Route::get('/settings', function () {
-            return \Inertia\Inertia::render('Admin');
-        })->name('admin.settings');
+    Route::get('/settings', function () {
+        return \Inertia\Inertia::render('Admin');
+    })->name('admin.settings');
     });
 });

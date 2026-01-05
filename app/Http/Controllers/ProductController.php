@@ -74,13 +74,20 @@ class ProductController extends Controller
 
     private function formatProduct($product)
     {
+        // Format image URL - if it's already a full URL (external), use it as is
+        // Otherwise, convert storage path to public URL
+        $imageUrl = $product->image;
+        if ($imageUrl && !str_starts_with($imageUrl, 'http')) {
+            $imageUrl = asset('storage/' . $imageUrl);
+        }
+        
         return [
             'id' => (string) $product->id,
             'name' => $product->name,
             'description' => $product->description,
             'price' => (float) $product->price,
             'originalPrice' => $product->original_price ? (float) $product->original_price : null,
-            'image' => $product->image,
+            'image' => $imageUrl,
             'category' => $product->category->slug,
             'rating' => $product->rating ? (float) $product->rating : null,
             'reviews' => $product->reviews_count,
@@ -110,8 +117,8 @@ class ProductController extends Controller
                             'userName' => ($review->user && isset($review->user->name)) ? (string) $review->user->name : 'Anonymous',
                             'rating' => isset($review->rating) ? (int) $review->rating : 0,
                             'comment' => isset($review->comment) ? (string) $review->comment : '',
-                            'date' => ($review->created_at && method_exists($review->created_at, 'format')) 
-                                ? $review->created_at->format('Y-m-d') 
+                            'date' => ($review->created_at && method_exists($review->created_at, 'setTimezone')) 
+                                ? $review->created_at->setTimezone(config('app.timezone'))->format('Y-m-d') 
                                 : (isset($review->created_at) ? (string) $review->created_at : date('Y-m-d')),
                             'verified' => isset($review->order_id) && $review->order_id !== null && $review->order_id !== '',
                         ];
@@ -121,7 +128,13 @@ class ProductController extends Controller
         }
         $formatted['reviews'] = $reviews;
         $formatted['images'] = $product->images->map(function ($image) {
-            return $image->image_path;
+            // Format image URL - if it's already a full URL (external), use it as is
+            // Otherwise, convert storage path to public URL
+            $imagePath = $image->image_path;
+            if ($imagePath && !str_starts_with($imagePath, 'http')) {
+                $imagePath = asset('storage/' . $imagePath);
+            }
+            return $imagePath;
         })->toArray();
 
         return $formatted;

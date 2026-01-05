@@ -89,17 +89,20 @@ export default function OrderDetail({ order: initialOrder }) {
   }
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    if (!dateString) return '';
+    // Parse date string (format: YYYY-MM-DD) - backend already sends dates in GMT
+    // Manually format to avoid timezone conversion issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return `${monthNames[month - 1]} ${day}, ${year}`;
   };
 
   const formatDateTime = (dateString, timeString) => {
     if (!dateString || !timeString) return '';
-    const date = new Date(dateString);
+    // The backend already sends dates and times in GMT, so just combine them
     return `${formatDate(dateString)} at ${timeString}`;
   };
 

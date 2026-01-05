@@ -72,7 +72,7 @@ export function CartProvider({ children }) {
       if (response.ok) {
         const data = await response.json();
         await loadCart(); // Reload cart to get updated data
-        toast.success(`Added ${product.name} to cart`);
+      toast.success(`Added ${product.name} to cart`);
       } else if (response.status === 401) {
         toast.error('Please log in to add items to cart');
         router.visit('/auth');
@@ -120,9 +120,9 @@ export function CartProvider({ children }) {
 
       if (response.ok) {
         await loadCart();
-        if (item) {
-          toast.info(`Removed ${item.name} from cart`);
-        }
+      if (item) {
+        toast.info(`Removed ${item.name} from cart`);
+      }
       } else {
         toast.error('Failed to remove item from cart');
       }
@@ -187,8 +187,8 @@ export function CartProvider({ children }) {
           credentials: 'include',
         });
       }
-      setItems([]);
-      toast.info("Cart cleared");
+    setItems([]);
+    toast.info("Cart cleared");
     } catch (error) {
       console.error('Failed to clear cart:', error);
       toast.error('Failed to clear cart');
