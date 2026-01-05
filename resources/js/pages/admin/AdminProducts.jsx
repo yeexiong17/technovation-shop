@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, Search, Filter, Upload, X } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Filter, Upload, X, Star, Eye, User, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,6 +23,7 @@ export default function AdminProducts({ products: initialProducts = [], categori
   const [editingProduct, setEditingProduct] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [viewingReviews, setViewingReviews] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -529,11 +530,25 @@ export default function AdminProducts({ products: initialProducts = [], categori
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium">{product.rating}</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({product.reviews})
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium">{product.rating > 0 ? product.rating.toFixed(1) : 'N/A'}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({product.reviews})
+                        </span>
+                      </div>
+                      {product.reviews > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => setViewingReviews(product)}
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          View
+                        </Button>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -571,6 +586,77 @@ export default function AdminProducts({ products: initialProducts = [], categori
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <p>Showing {filteredProducts.length} of {productList.length} products</p>
       </div>
+
+      {/* Reviews Dialog */}
+      <Dialog open={viewingReviews !== null} onOpenChange={(open) => !open && setViewingReviews(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Reviews for {viewingReviews?.name}</DialogTitle>
+            <DialogDescription>
+              {viewingReviews?.reviews || 0} {viewingReviews?.reviews === 1 ? 'review' : 'reviews'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {viewingReviews?.reviewsData && viewingReviews.reviewsData.length > 0 ? (
+              viewingReviews.reviewsData.map((review) => (
+                <div
+                  key={review.id}
+                  className="border border-border rounded-lg p-4"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{review.userName}</p>
+                          {review.verified && (
+                            <span className="flex items-center gap-1 text-xs text-primary">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Verified Purchase
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {review.date || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={cn(
+                            "w-4 h-4",
+                            i < review.rating
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted-foreground/30"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {review.comment}
+                    </p>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No reviews yet for this product</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingReviews(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

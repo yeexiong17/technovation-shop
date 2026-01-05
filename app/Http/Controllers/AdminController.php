@@ -501,11 +501,31 @@ class AdminController extends Controller
             abort(403, 'Unauthorized access');
         }
 
-        // Get all products with their categories
-        $products = Product::with('category')
+        // Get all products with their categories and reviews
+        $products = Product::with(['category', 'reviews.user'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($product) {
+                // Format reviews
+                $reviews = [];
+                if ($product->relationLoaded('reviews') && $product->reviews) {
+                    foreach ($product->reviews as $review) {
+                        if ($review && is_object($review)) {
+                            $reviews[] = [
+                                'id' => (string) ($review->id ?? ''),
+                                'userId' => ($review->user && isset($review->user->id)) ? (string) $review->user->id : null,
+                                'userName' => ($review->user && isset($review->user->name)) ? (string) $review->user->name : 'Anonymous',
+                                'rating' => isset($review->rating) ? (int) $review->rating : 0,
+                                'comment' => isset($review->comment) ? (string) $review->comment : '',
+                                'date' => ($review->created_at && method_exists($review->created_at, 'setTimezone')) 
+                                    ? $review->created_at->copy()->utc()->setTimezone(config('app.timezone'))->format('Y-m-d') 
+                                    : (isset($review->created_at) ? (string) $review->created_at : date('Y-m-d')),
+                                'verified' => isset($review->order_id) && $review->order_id !== null && $review->order_id !== '',
+                            ];
+                        }
+                    }
+                }
+                
                 return [
                     'id' => (string) $product->id,
                     'name' => $product->name,
@@ -521,6 +541,7 @@ class AdminController extends Controller
                     'badge' => $product->badge,
                     'rating' => $product->rating ? (float) $product->rating : 0,
                     'reviews' => $product->reviews_count ?? 0,
+                    'reviewsData' => $reviews, // Include actual reviews data
                 ];
             });
 
