@@ -123,7 +123,9 @@ class OrderController extends Controller
         ];
         $formatted['paymentMethod'] = $order->payment_method;
         $formatted['timeline'] = $order->statusHistory->map(function ($history) {
-            $dateTime = $history->created_at->setTimezone(config('app.timezone'));
+            // Explicitly convert from UTC to GMT (app timezone)
+            // First ensure we're working with UTC, then convert to GMT
+            $dateTime = $history->created_at->copy()->utc()->setTimezone(config('app.timezone'));
             return [
                 'status' => $history->status,
                 'date' => $dateTime->format('Y-m-d'),

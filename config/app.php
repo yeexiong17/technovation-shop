@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'GMT'),
+    'timezone' => env('APP_TIMEZONE', 'Asia/Kuala_Lumpur'), // GMT+8
 
     /*
     |--------------------------------------------------------------------------
