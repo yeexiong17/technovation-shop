@@ -17,24 +17,41 @@ A modern e-commerce application built with Laravel and React, using Inertia.js f
 All PHP application files are located in the `app/` directory:
 
 - **Controllers**: `app/Http/Controllers/`
-  - `HomeController.php` - Home page controller
-  - `ProductController.php` - Product management controller
+  - `AdminController.php` - Admin dashboard, products, orders, customers, and analytics management
+  - `AuthController.php` - User authentication, registration, login, logout, and password reset
+  - `CartController.php` - Shopping cart operations (add, update, remove, fetch)
+  - `CheckoutController.php` - Order checkout and processing
+  - `HomeController.php` - Home page with featured products and categories
+  - `OrderController.php` - User order listing, details, and reviews
+  - `ProductController.php` - Product catalog, details, filtering, and product reviews
+  - `ProfileController.php` - User profile management
   - `Controller.php` - Base controller
 
 - **Models**: `app/Models/`
-  - `User.php` - User model
+  - `CartItem.php` - Shopping cart items
+  - `Category.php` - Product categories
+  - `Order.php` - Customer orders
+  - `OrderItem.php` - Order line items
+  - `OrderStatusHistory.php` - Order status tracking timeline
+  - `Product.php` - Product catalog
+  - `ProductImage.php` - Product images
+  - `Review.php` - Product and order reviews
+  - `User.php` - User accounts with admin support
 
 - **Middleware**: `app/Http/Middleware/`
-  - `HandleInertiaRequests.php` - Inertia.js middleware
+  - `EnsureUserIsAdmin.php` - Restricts admin routes to admin users only
+  - `HandleInertiaRequests.php` - Inertia.js middleware for sharing data
+  - `RedirectAdminToDashboard.php` - Redirects admin users from user routes to admin dashboard
+  - `VerifyCsrfToken.php` - CSRF token verification (with API route exclusions)
 
 - **Providers**: `app/Providers/`
   - `AppServiceProvider.php` - Application service provider
 
-- **Routes**: `routes/web.php` - Web routes definition
+- **Routes**: `routes/web.php` - Web routes definition (public, authenticated, and admin routes)
 
 - **Database**: `database/`
-  - `migrations/` - Database migrations
-  - `seeders/` - Database seeders
+  - `migrations/` - Database migrations for all tables
+  - `seeders/` - Database seeders (CategorySeeder, ProductSeeder, AdminUserSeeder)
   - `factories/` - Model factories
 
 - **Tests**: `tests/`
@@ -49,29 +66,66 @@ All React/JavaScript files are located in the `resources/js/` directory:
 - **Layout**: `resources/js/Layout.jsx` - Main layout component
 
 - **Pages**: `resources/js/pages/`
-  - React page components (17 files) that correspond to routes
+  - `Admin.jsx` - Admin panel router
+  - `Auth.jsx` - Login and registration page
+  - `Categories.jsx` - Category browsing page
+  - `Checkout.jsx` - Checkout page
+  - `ForgotPassword.jsx` - Password reset request page
+  - `Index.jsx` - Home page
+  - `NotFound.jsx` - 404 error page
+  - `OrderDetail.jsx` - Individual order details page
+  - `Orders.jsx` - User order history page
+  - `ProductDetail.jsx` - Product detail page with reviews
+  - `Products.jsx` - Product catalog page
+  - `Profile.jsx` - User profile page
+  - `ResetPassword.jsx` - Password reset form page
+  - `admin/` - Admin-specific pages:
+    - `AdminAnalytics.jsx` - Analytics dashboard
+    - `AdminCustomers.jsx` - Customer management
+    - `AdminDashboard.jsx` - Main admin dashboard
+    - `AdminOrderDetail.jsx` - Admin order detail view
+    - `AdminOrders.jsx` - Order management
+    - `AdminProducts.jsx` - Product management
+    - `AdminSettings.jsx` - Admin settings (placeholder)
 
 - **Components**: `resources/js/components/`
-  - `admin/` - Admin panel components
-  - `cart/` - Shopping cart components
-  - `home/` - Home page components (5 files)
-  - `layout/` - Layout components (2 files)
-  - `products/` - Product-related components
-  - `ui/` - Reusable UI components (9 files)
+  - `admin/AdminLayout.jsx` - Admin panel layout with sidebar
+  - `cart/CartDrawer.jsx` - Shopping cart drawer component
+  - `home/` - Home page components:
+    - `CategorySection.jsx` - Category showcase
+    - `FeaturedProducts.jsx` - Featured products display
+    - `HeroSection.jsx` - Hero banner
+    - `NewsletterSection.jsx` - Newsletter signup
+    - `PromoSection.jsx` - Promotional content
+  - `layout/` - Layout components:
+    - `Footer.jsx` - Site footer
+    - `Navbar.jsx` - Navigation bar
+  - `products/ProductCard.jsx` - Product card component
+  - `ui/` - Reusable UI components (Radix UI based):
+    - `button.jsx` - Button component
+    - `dialog.jsx` - Dialog/modal component
+    - `dropdown-menu.jsx` - Dropdown menu component
+    - `input.jsx` - Input field component
+    - `sonner.jsx` - Toast notifications
+    - `toast.jsx` - Toast component
+    - `toaster.jsx` - Toast container
+    - `tooltip.jsx` - Tooltip component
+    - `use-toast.js` - Toast hook
   - `NavLink.jsx` - Navigation link component
 
 - **Context**: `resources/js/context/`
-  - `CartContext.jsx` - Shopping cart context provider
+  - `CartContext.jsx` - Shopping cart context provider with API integration
 
 - **Hooks**: `resources/js/hooks/`
   - `use-mobile.jsx` - Mobile detection hook
   - `use-toast.js` - Toast notification hook
 
 - **Data**: `resources/js/data/`
-  - `products.js` - Product data
+  - `products.js` - Static product data (legacy, now using backend data)
 
 - **Utilities**: `resources/js/lib/`
-  - `utils.js` - Utility functions
+  - `utils.js` - Utility functions (cn helper for classnames)
+  - `csrf.js` - CSRF token helper
 
 - **Configuration**: `resources/js/bootstrap.js` - Bootstrap configuration
 
