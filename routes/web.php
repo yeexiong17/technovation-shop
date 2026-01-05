@@ -16,6 +16,12 @@ Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login'])->n
 Route::post('/register', [\App\Http\Controllers\AuthController::class, 'register'])->name('register');
 Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
 
+// Password reset routes
+Route::get('/forgot-password', [\App\Http\Controllers\AuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [\App\Http\Controllers\AuthController::class, 'forgotPassword'])->name('password.email');
+Route::get('/reset-password/{token}', [\App\Http\Controllers\AuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/reset-password', [\App\Http\Controllers\AuthController::class, 'resetPassword'])->name('password.update');
+
 // Redirect login GET to auth (for compatibility)
 Route::get('/login', function () {
     return redirect()->route('auth');
