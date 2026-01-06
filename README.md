@@ -148,13 +148,22 @@ All React/JavaScript files are located in the `resources/js/` directory:
 - Composer
 - Node.js and npm
 - MariaDB (MySQL-compatible database server)
-- PHP extensions: PDO, PDO MySQL/MariaDB, OpenSSL, Mbstring, Tokenizer, XML, Ctype, JSON, BCMath
+- PHP extensions: PDO, PDO MySQL/MariaDB, OpenSSL, Mbstring, Tokenizer, XML, Ctype, JSON
+
+#### Checking PHP Extensions
+
+Before proceeding, verify that all required PHP extensions are installed and enabled:
+
+**Quick Check:**
+```bash
+php -m
+```
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/yeexiong17/technovation-shop.git
 cd technovation-shop
 ```
 
@@ -171,10 +180,16 @@ npm install
 4. Set up environment:
 ```bash
 cp .env.example .env
-php artisan key:generate
 ```
 
-5. Set up database:
+5. Create storage link (required for product images):
+```bash
+php artisan storage:link
+```
+
+This creates a symbolic link from `public/storage` to `storage/app/public`, making uploaded product images accessible via the web.
+
+6. Set up database:
    - See [DATABASE_SETUP.md](DATABASE_SETUP.md) for detailed MariaDB setup instructions
    - Configure your `.env` file with database credentials
    - Run migrations:

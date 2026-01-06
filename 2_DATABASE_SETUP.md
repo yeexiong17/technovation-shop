@@ -30,19 +30,43 @@ Download and install from [MariaDB Downloads](https://mariadb.org/download/)
 ## Step 2: Create Database and User
 
 1. Log in to MariaDB as root:
+
+**On Linux:**
 ```bash
 sudo mysql -u root -p
+# Or if that doesn't work:
+sudo mariadb -u root -p
+# Or if root has no password:
+sudo mysql
 ```
+
+**On macOS:**
+```bash
+mysql -u root -p
+# Or if that doesn't work:
+mariadb -u root -p
+# Or if root has no password:
+mysql -u root
+```
+
+**On Windows:**
+```cmd
+mysql -u root -p
+```
+Or if MariaDB is not in your PATH, you can:
+- Open **Start Menu** → Search for "MariaDB" → Open **"MariaDB Command Line Client"** (it will prompt for password)
+
+**Note:** If you installed MariaDB with a password during installation, enter it when prompted. If you didn't set a password, you may need to omit the `-p` flag.
 
 2. Create the database:
 ```sql
-CREATE DATABASE technovation_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE technovation CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 3. Create a database user (replace `your_username` and `your_password` with your desired credentials):
 ```sql
 CREATE USER 'your_username'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON technovation_shop.* TO 'your_username'@'localhost';
+GRANT ALL PRIVILEGES ON technovation.* TO 'your_username'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -50,8 +74,15 @@ EXIT;
 ## Step 3: Configure Laravel Environment
 
 1. Copy the `.env.example` file to `.env` if you haven't already:
+
+**On Linux/macOS:**
 ```bash
 cp .env.example .env
+```
+
+**On Windows:**
+```cmd
+copy .env.example .env
 ```
 
 2. Update your `.env` file with MariaDB connection details:
@@ -59,7 +90,7 @@ cp .env.example .env
 DB_CONNECTION=mariadb
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=technovation_shop
+DB_DATABASE=technovation
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 ```
@@ -87,18 +118,12 @@ This will create the following tables:
 - `reviews`
 - `product_images`
 
-## Step 5: (Optional) Seed Initial Data
+## Step 5: Seed Initial Data
 
-You can create seeders to populate initial data:
-
+Run database seeder to populate initial data:
 ```bash
-php artisan make:seeder CategorySeeder
-php artisan make:seeder ProductSeeder
-```
-
-Then run:
-```bash
-php artisan db:seed
+php artisan db:seed --class=CategorySeeder
+php artisan db:seed --class=ProductSeeder
 ```
 
 ## Step 6: Create Admin Account
@@ -134,37 +159,6 @@ Then run the seeder:
 php artisan db:seed --class=AdminUserSeeder
 ```
 
-### Alternative: Create Admin Account Manually
-
-You can also create an admin account manually using Laravel Tinker:
-
-```bash
-php artisan tinker
-```
-
-Then run:
-```php
-$user = App\Models\User::create([
-    'name' => 'Admin',
-    'email' => 'admin@technovation.com',
-    'password' => Hash::make('your-secure-password'),
-    'is_admin' => true,
-]);
-```
-
-Or directly in the database:
-```sql
-INSERT INTO users (name, email, password, is_admin, created_at, updated_at)
-VALUES (
-    'Admin',
-    'admin@technovation.com',
-    '$2y$12$YourHashedPasswordHere',  -- Use Hash::make() in Laravel to generate
-    true,
-    NOW(),
-    NOW()
-);
-```
-
 ## Database Schema Overview
 
 ### Core Tables
@@ -189,6 +183,21 @@ VALUES (
 - Orders → Order Status History (one-to-many)
 - Products → Reviews (one-to-many)
 - Products → Product Images (one-to-many)
+
+## Step 7: Access Admin Dashboard
+
+After creating an admin account, you can access the admin dashboard:
+
+1. Navigate to `/auth` and sign in with your admin credentials
+2. You will be automatically redirected to `/admin` dashboard
+3. Admin users can:
+   - View and manage products
+   - View and update orders
+   - Manage customers
+   - View analytics
+   - Update order statuses and tracking numbers
+
+**Note:** Admin users are automatically redirected to `/admin` and cannot access regular user pages.
 
 ## Troubleshooting
 
@@ -227,32 +236,6 @@ php artisan migrate:fresh
 ```
 
 3. Check for foreign key constraint issues - ensure tables are created in the correct order.
-
-## Step 7: Access Admin Dashboard
-
-After creating an admin account, you can access the admin dashboard:
-
-1. Navigate to `/auth` and sign in with your admin credentials
-2. You will be automatically redirected to `/admin` dashboard
-3. Admin users can:
-   - View and manage products
-   - View and update orders
-   - Manage customers
-   - View analytics
-   - Update order statuses and tracking numbers
-
-**Note:** Admin users are automatically redirected to `/admin` and cannot access regular user pages.
-
-## Next Steps
-
-After setting up the database:
-
-1. ✅ Eloquent models are already created for each table
-2. ✅ Relationships are set up in the models
-3. ✅ Controllers handle database operations
-4. ✅ API endpoints and Inertia.js data sharing are implemented
-5. ✅ Seeders are available for initial data
-6. ✅ Admin account seeder is available
 
 ## Useful Commands
 
