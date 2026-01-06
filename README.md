@@ -221,6 +221,11 @@ Run services individually in separate terminals:
 - Laravel server: `php artisan serve`
 - Vite dev server: `npm run dev`
 
+To view the website, navigate to:
+```bash
+http://127.0.0.1:8000
+```
+
 ### Building for Production
 
 ```bash
