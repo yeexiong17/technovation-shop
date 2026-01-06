@@ -190,21 +190,14 @@ php artisan storage:link
 This creates a symbolic link from `public/storage` to `storage/app/public`, making uploaded product images accessible via the web.
 
 6. Set up database:
-   - See [DATABASE_SETUP.md](DATABASE_SETUP.md) for detailed MariaDB setup instructions
+   - See [DATABASE_SETUP.md](2_DATABASE_SETUP.md) for detailed MariaDB setup instructions
    - Configure your `.env` file with database credentials
-   - Run migrations:
-```bash
-php artisan migrate
-php artisan db:seed --class=CategorySeeder
-php artisan db:seed --class=ProductSeeder
-php artisan db:seed --class=AdminUserSeeder
-```
 
 ## Development
 
 ### Running the Development Server
 
-**Quick Start In Single Terminal (Recommended):**
+**Quick Start In Single Terminal (For Bash User):**
 
 Make the script executable:
 ```bash
@@ -223,18 +216,10 @@ http://127.0.0.1:8000
 ```
 
 **Alternative Options:**
-
-Start all development services (Laravel server, queue worker, logs, and Vite):
-```bash
-composer run dev
-```
-
-Or run services individually in separate terminals:
+Run services individually in separate terminals:
 
 - Laravel server: `php artisan serve`
 - Vite dev server: `npm run dev`
-- Queue worker: `php artisan queue:listen`
-- Logs: `php artisan pail`
 
 ### Building for Production
 
