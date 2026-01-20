@@ -28,6 +28,7 @@ Route::get('/login', function () {
 });
 
 // All other routes require authentication
+// Prevent Broken Authentication in OWASP Top 10 vulnerability
 Route::middleware('auth')->group(function () {
     // Redirect admins to admin dashboard if they try to access regular pages
     Route::middleware(\App\Http\Middleware\RedirectAdminToDashboard::class)->group(function () {
@@ -86,4 +87,9 @@ Route::get('/checkout', function () {
         return \Inertia\Inertia::render('Admin');
     })->name('admin.settings');
     });
+});
+
+// Demo the setup of Security Misconfiguration in OWASP Top 10 (remediated)
+Route::get('/crash', function () {
+    throw new \Exception("Force crash");
 });
