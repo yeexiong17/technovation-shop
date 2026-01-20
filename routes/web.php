@@ -88,3 +88,8 @@ Route::get('/checkout', function () {
     })->name('admin.settings');
     });
 });
+
+// Demo the setup of Security Misconfiguration in OWASP Top 10 (remediated)
+Route::get('/crash', function () {
+    throw new \Exception("Force crash");
+});
