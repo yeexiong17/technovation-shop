@@ -33,6 +33,7 @@ class OrderController extends Controller
         ]);
     }
 
+    // Prevent IDOR in OWASP Top 10 vulnerability
     public function show(Request $request, $id)
     {
         $user = Auth::user();
