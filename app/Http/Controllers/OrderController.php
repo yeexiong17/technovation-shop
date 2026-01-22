@@ -15,7 +15,7 @@ class OrderController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         if (!$user) {
             return redirect()->route('auth');
         }
@@ -37,49 +37,14 @@ class OrderController extends Controller
     public function show(Request $request, $id)
     {
         $user = Auth::user();
-        
+
         if (!$user) {
             return redirect()->route('auth');
         }
 
-        // Convert ID to integer if it's numeric (handle both string and int IDs)
-        $orderId = is_numeric($id) ? (int) $id : null;
-        
-        // Admins can view any order, regular users can only view their own
-        $order = null;
-        
-        if ($orderId !== null) {
-            // Try numeric ID first
-            $query = Order::where('id', $orderId);
-            if (!$user->is_admin) {
-                $query->where('user_id', $user->id);
-            }
-            $order = $query->with(['orderItems.product', 'statusHistory', 'reviews'])->first();
-        }
-        
-        // If not found by ID, try order number
-        if (!$order && !empty($id)) {
-            $query = Order::where('order_number', $id);
-            if (!$user->is_admin) {
-                $query->where('user_id', $user->id);
-            }
-            $order = $query->with(['orderItems.product', 'statusHistory', 'reviews'])->first();
-        }
-
-        if (!$order) {
-            // Log for debugging (remove in production)
-            \Log::warning('Order not found', [
-                'user_id' => $user->id,
-                'requested_id' => $id,
-                'order_id_type' => gettype($orderId),
-            ]);
-            
-            // Return a proper 404 response
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Order not found'], 404);
-            }
-            abort(404, 'Order not found');
-        }
+        $order = Order::where('id', $id)
+            ->with(['orderItems.product', 'statusHistory', 'reviews'])
+            ->first();
 
         return Inertia::render('OrderDetail', [
             'order' => $this->formatOrderDetail($order),
@@ -110,7 +75,7 @@ class OrderController extends Controller
     private function formatOrderDetail($order)
     {
         $formatted = $this->formatOrder($order);
-        
+
         $formatted['subtotal'] = (float) $order->subtotal;
         $formatted['shipping'] = (float) $order->shipping;
         $formatted['tax'] = (float) $order->tax;
@@ -153,7 +118,7 @@ class OrderController extends Controller
         } else {
             $review = null;
         }
-        
+
         if ($review) {
             $formatted['review'] = [
                 'id' => (string) $review->id,
@@ -169,7 +134,7 @@ class OrderController extends Controller
     public function storeReview(Request $request, $id)
     {
         $user = Auth::user();
-        
+
         if (!$user) {
             return redirect()->route('auth');
         }
@@ -181,7 +146,7 @@ class OrderController extends Controller
                 ->where('user_id', $user->id)
                 ->first();
         }
-        
+
         if (!$order && !empty($id)) {
             $order = Order::where('order_number', $id)
                 ->where('user_id', $user->id)
@@ -241,7 +206,7 @@ class OrderController extends Controller
                 $reviews = Review::where('product_id', $productId)->get();
                 $averageRating = $reviews->avg('rating');
                 $reviewsCount = $reviews->count();
-                
+
                 $product->update([
                     'rating' => round($averageRating, 2),
                     'reviews_count' => $reviewsCount,
